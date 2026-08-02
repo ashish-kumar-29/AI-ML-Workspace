@@ -4,7 +4,7 @@ import { useRef } from "react";
 import api from "@/lib/api";
 import { analyzeDataset } from "@/lib/eda";
 
-export default function FileUpload({ onUploadSuccess }) {
+export default function FileUpload({ onUploadSuccess, onEDASuccess }) {
   const fileInputRef = useRef(null);
 
   const handleButtonClick = () => {
@@ -35,9 +35,10 @@ export default function FileUpload({ onUploadSuccess }) {
       const edaData = await analyzeDataset(file);
 
       console.log("EDA Response:", edaData);
+      console.log("Basic Info:", edaData.basic_info);
 
       // We'll connect this later
-      // onEDASuccess(edaData);
+      onEDASuccess(edaData);
 
     } catch (error) {
       console.error(error);

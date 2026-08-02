@@ -185,4 +185,9 @@ async def analyze_dataset(file: UploadFile = File(...)):
 
         print(f"✅ {name} OK")
 
-    return {"status": "success"}
+    cleaned_report = clean_nan(report)
+    
+    print("🚀 Returning full EDA report")
+    print(cleaned_report.keys())
+
+    return cleaned_report

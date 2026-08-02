@@ -4,9 +4,11 @@ import { useState } from "react";
 import FileUpload from "@/components/FileUpload";
 import DatasetDetails from "@/components/DatasetInfo";
 import PreviewTable from "@/components/PreviewTable";
+import EDASummary from "@/components/EDASummary";
 
 export default function Home() {
   const [dataset, setDataset] = useState(null);
+  const [eda, setEda] = useState(null);
 
   return (
     <main className="min-h-screen bg-gray-100 flex flex-col items-center justify-center py-10">
@@ -30,14 +32,21 @@ export default function Home() {
             Drag & Drop your CSV file here
           </p>
 
-          <FileUpload onUploadSuccess={setDataset} />
+          <FileUpload
+            onUploadSuccess={setDataset}
+            onEDASuccess={setEda}
+          />
         </div>
 
         {dataset && (
           <>
-            <DatasetDetails data={dataset} />
-            <PreviewTable data={dataset} />
+          <DatasetDetails data={dataset} />
+          <PreviewTable data={dataset} />
           </>
+        )}
+
+        {eda && (
+          <EDASummary data={eda} />
         )}
       </div>
     </main>

@@ -1,4 +1,9 @@
 export default function EDASummary({ data }) {
+  // const info = data.basic_info;
+  if (!data || !data.basic_info) {
+    return <div>Loading EDA...</div>;
+  }
+
   const info = data.basic_info;
 
   const cards = [
