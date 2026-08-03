@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import api from "@/lib/api";
 import { analyzeDataset } from "@/lib/eda";
 
@@ -9,9 +9,12 @@ export default function FileUpload({
   onEDASuccess,
 }) {
   const fileInputRef = useRef(null);
+  const [loading, setLoading] = useState(false);
 
   const handleButtonClick = () => {
-    fileInputRef.current?.click();
+    if (!loading) {
+      fileInputRef.current?.click();
+    }
   };
 
   const handleFileChange = async (event) => {
@@ -23,6 +26,8 @@ export default function FileUpload({
     formData.append("file", file);
 
     try {
+      setLoading(true);
+
       // Upload dataset
       const response = await api.post("/upload", formData, {
         headers: {
@@ -43,7 +48,9 @@ export default function FileUpload({
         onEDASuccess(edaData);
       }
 
+      setLoading(false);
     } catch (error) {
+      setLoading(false);
       console.error(error);
       alert("Upload Failed");
     }
@@ -61,9 +68,41 @@ export default function FileUpload({
 
       <button
         onClick={handleButtonClick}
-        className="mt-8 bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition"
+        disabled={loading}
+        className={`mt-8 px-8 py-3 rounded-xl font-semibold transition-all duration-300 ${
+          loading
+            ? "bg-gray-400 text-white cursor-not-allowed"
+            : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-xl hover:scale-105"
+        }`}
       >
-        Choose CSV
+        {loading ? (
+          <div className="flex items-center gap-2">
+            <svg
+              className="animate-spin h-5 w-5"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              />
+            </svg>
+
+            Uploading...
+          </div>
+        ) : (
+          "Choose CSV"
+        )}
       </button>
     </>
   );

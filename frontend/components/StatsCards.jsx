@@ -1,35 +1,53 @@
 export default function StatsCards({ data }) {
+  const cards = [
+    {
+      title: "Dataset",
+      value: data.filename,
+      icon: "📂",
+      color: "from-blue-500 to-indigo-600",
+    },
+    {
+      title: "Rows",
+      value: data.rows.toLocaleString(),
+      icon: "📄",
+      color: "from-green-500 to-emerald-600",
+    },
+    {
+      title: "Columns",
+      value: data.columns,
+      icon: "📊",
+      color: "from-purple-500 to-pink-600",
+    },
+    {
+      title: "Status",
+      value: "Ready",
+      icon: "✅",
+      color: "from-orange-500 to-red-500",
+    },
+  ];
+
   return (
-    <div className="max-w-6xl mx-auto mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {cards.map((card, index) => (
+        <div
+          key={index}
+          className="bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 p-6"
+        >
+          <div
+            className={`w-14 h-14 rounded-2xl bg-gradient-to-r ${card.color} flex items-center justify-center text-3xl`}
+          >
+            {card.icon}
+          </div>
 
-      <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition">
-        <p className="text-gray-500">📄 Rows</p>
-        <h2 className="text-3xl font-bold text-blue-600 mt-2">
-          {data.rows}
-        </h2>
-      </div>
+          <p className="text-gray-500 mt-6 text-sm font-medium">
+            {card.title}
+          </p>
 
-      <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition">
-        <p className="text-gray-500">📑 Columns</p>
-        <h2 className="text-3xl font-bold text-green-600 mt-2">
-          {data.columns}
-        </h2>
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition">
-        <p className="text-gray-500">📂 Dataset</p>
-        <h2 className="text-lg font-bold text-purple-600 mt-2 truncate">
-          {data.filename}
-        </h2>
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition">
-        <p className="text-gray-500">✅ Status</p>
-        <h2 className="text-2xl font-bold text-green-500 mt-2">
-          Uploaded
-        </h2>
-      </div>
-
+          <h2 className="text-2xl font-bold mt-2 text-gray-800 break-words">
+            {card.value}
+          </h2>
+        </div>
+      ))}
     </div>
   );
 }

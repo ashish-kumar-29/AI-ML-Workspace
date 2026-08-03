@@ -6,55 +6,87 @@ export default function PreviewTable({ data }) {
   );
 
   return (
-    <div className="mt-8 bg-white rounded-2xl shadow-xl p-6">
-      <h2 className="text-3xl font-bold text-blue-600 mb-6">
-        Dataset Preview
-      </h2>
+    <div className="bg-white rounded-3xl shadow-2xl p-8">
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full border">
-          <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+      {/* Header */}
+      <div className="mb-8">
+
+        <span className="bg-green-100 text-green-700 px-5 py-2 rounded-full text-sm font-medium">
+          Data Preview
+        </span>
+
+        <h2 className="text-4xl font-bold mt-5 text-gray-800">
+          📑 Dataset Preview
+        </h2>
+
+        <p className="text-gray-500 mt-3">
+          First five rows from the uploaded dataset
+        </p>
+
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto rounded-2xl border border-gray-200">
+
+        <table className="min-w-full">
+
+          <thead className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white sticky top-0">
+
             <tr>
-              <th className="px-6 py-4 border whitespace-nowrap text-center font-semibold">
-                S.No.
+
+              <th className="px-6 py-4 text-center font-semibold">
+                #
               </th>
 
               {headers.map((header) => (
                 <th
                   key={header}
-                  className="px-6 py-4 border whitespace-nowrap text-center font-semibold"
+                  className="px-6 py-4 whitespace-nowrap text-left font-semibold"
                 >
                   {header}
                 </th>
               ))}
+
             </tr>
+
           </thead>
 
-          <tbody className="text-gray-800">
+          <tbody>
+
             {data.preview.map((row, index) => (
+
               <tr
                 key={index}
-                className={`${
+                className={`transition duration-200 hover:bg-blue-50 ${
                   index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                } hover:bg-blue-50 transition`}
+                }`}
               >
-                <td className="border px-5 py-3 text-center text-sm text-gray-800">
+
+                <td className="px-6 py-4 text-center font-semibold text-gray-600">
                   {index + 1}
                 </td>
 
                 {headers.map((header) => (
+
                   <td
                     key={header}
-                    className="border px-5 py-3 whitespace-nowrap text-sm text-gray-800"
+                    className="px-6 py-4 whitespace-nowrap text-gray-700 border-t"
                   >
                     {String(row[header])}
                   </td>
+
                 ))}
+
               </tr>
+
             ))}
+
           </tbody>
+
         </table>
+
       </div>
+
     </div>
   );
 }
