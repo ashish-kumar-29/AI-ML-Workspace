@@ -6,9 +6,9 @@ export default function DatasetDetails({ data }) {
       </h2>
 
       <div className="grid grid-cols-3 gap-8 text-center">
-
         <div className="bg-blue-50 rounded-xl p-5 shadow">
           <p className="text-gray-500 text-sm">Filename</p>
+
           <h3
             className="text-lg font-semibold text-gray-800 mt-2 truncate"
             title={data.filename}
@@ -19,6 +19,7 @@ export default function DatasetDetails({ data }) {
 
         <div className="bg-green-50 rounded-xl p-5 shadow">
           <p className="text-gray-500 text-sm">Rows</p>
+
           <h3 className="text-3xl font-bold text-green-600">
             {data.rows}
           </h3>
@@ -26,21 +27,19 @@ export default function DatasetDetails({ data }) {
 
         <div className="bg-purple-50 rounded-xl p-5 shadow">
           <p className="text-gray-500 text-sm">Columns</p>
+
           <h3 className="text-3xl font-bold text-purple-600">
             {data.columns}
           </h3>
         </div>
-
       </div>
 
       <div className="mt-10">
-
         <h3 className="text-2xl font-semibold text-center text-gray-800 mb-6">
           Column Names
         </h3>
 
         <div className="flex flex-wrap justify-center gap-3">
-
           {data.column_names
             .filter((column) => column.trim() !== "Unnamed: 0")
             .map((column) => (
@@ -51,11 +50,8 @@ export default function DatasetDetails({ data }) {
                 {column}
               </span>
             ))}
-
         </div>
-
       </div>
-
     </div>
   );
 }

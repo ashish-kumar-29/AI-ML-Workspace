@@ -7,15 +7,12 @@ export default function PreviewTable({ data }) {
 
   return (
     <div className="mt-8 bg-white rounded-2xl shadow-xl p-6">
-
       <h2 className="text-3xl font-bold text-blue-600 mb-6">
         Dataset Preview
       </h2>
 
       <div className="overflow-x-auto">
-
         <table className="min-w-full border">
-
           <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
             <tr>
               <th className="px-6 py-4 border whitespace-nowrap text-center font-semibold">
@@ -34,7 +31,6 @@ export default function PreviewTable({ data }) {
           </thead>
 
           <tbody className="text-gray-800">
-
             {data.preview.map((row, index) => (
               <tr
                 key={index}
@@ -42,7 +38,6 @@ export default function PreviewTable({ data }) {
                   index % 2 === 0 ? "bg-white" : "bg-gray-50"
                 } hover:bg-blue-50 transition`}
               >
-
                 <td className="border px-5 py-3 text-center text-sm text-gray-800">
                   {index + 1}
                 </td>
@@ -55,16 +50,11 @@ export default function PreviewTable({ data }) {
                     {String(row[header])}
                   </td>
                 ))}
-
               </tr>
             ))}
-
           </tbody>
-
         </table>
-
       </div>
-
     </div>
   );
 }

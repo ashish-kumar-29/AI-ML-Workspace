@@ -2,8 +2,12 @@
 
 import { useRef } from "react";
 import api from "@/lib/api";
+import { analyzeDataset } from "@/lib/eda";
 
-export default function FileUpload({ onUploadSuccess }) {
+export default function FileUpload({
+  onUploadSuccess,
+  onEDASuccess,
+}) {
   const fileInputRef = useRef(null);
 
   const handleButtonClick = () => {
@@ -19,13 +23,26 @@ export default function FileUpload({ onUploadSuccess }) {
     formData.append("file", file);
 
     try {
+      // Upload dataset
       const response = await api.post("/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
 
+      console.log("Upload Response:", response.data);
+
       onUploadSuccess(response.data);
+
+      // Run EDA
+      const edaData = await analyzeDataset(file);
+
+      console.log("EDA Response:", edaData);
+
+      if (onEDASuccess) {
+        onEDASuccess(edaData);
+      }
+
     } catch (error) {
       console.error(error);
       alert("Upload Failed");

@@ -1,15 +1,18 @@
 "use client";
 
 import { useState } from "react";
+
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import UploadCard from "@/components/UploadCard";
 import DatasetDetails from "@/components/DatasetInfo";
 import PreviewTable from "@/components/PreviewTable";
 import StatsCards from "@/components/StatsCards";
+import EDASummary from "@/components/EDASummary";
 
 export default function Home() {
   const [dataset, setDataset] = useState(null);
+  const [eda, setEda] = useState(null);
 
   return (
     <>
@@ -19,18 +22,27 @@ export default function Home() {
 
         <HeroSection />
 
-        <UploadCard onUploadSuccess={setDataset} />
+        <UploadCard
+          onUploadSuccess={setDataset}
+          onEDASuccess={setEda}
+        />
 
         {dataset && (
-  <>
-    <StatsCards data={dataset} />
+          <>
+            <StatsCards data={dataset} />
 
-    <section className="max-w-6xl mx-auto mt-10">
-      <DatasetDetails data={dataset} />
-      <PreviewTable data={dataset} />
-    </section>
-  </>
-)}
+            <section className="max-w-6xl mx-auto mt-10">
+              <DatasetDetails data={dataset} />
+              <PreviewTable data={dataset} />
+            </section>
+          </>
+        )}
+
+        {eda && (
+          <section className="max-w-6xl mx-auto mt-10">
+            <EDASummary data={eda} />
+          </section>
+        )}
 
       </main>
     </>
