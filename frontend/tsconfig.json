@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "components/Navbar.jsx", "app/page.jsx", "components/FileUpload.jsx", "components/DatasetInfo.jsx", "components/PreviewTable.jsx", "lib/api.js"  ],
   "exclude": ["node_modules"]
 }
