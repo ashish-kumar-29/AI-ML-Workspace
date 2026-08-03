@@ -1,0 +1,27 @@
+"use client";
+
+import { createContext, useContext, useState } from "react";
+
+const DatasetContext = createContext();
+
+export function DatasetProvider({ children }) {
+  const [dataset, setDataset] = useState(null);
+  const [eda, setEda] = useState(null);
+
+  return (
+    <DatasetContext.Provider
+      value={{
+        dataset,
+        setDataset,
+        eda,
+        setEda,
+      }}
+    >
+      {children}
+    </DatasetContext.Provider>
+  );
+}
+
+export function useDataset() {
+  return useContext(DatasetContext);
+}

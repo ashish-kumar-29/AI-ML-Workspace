@@ -58,10 +58,9 @@ export default function UploadCard({
             <div className="mt-10">
 
               <FileUpload
-                onUploadSuccess={onUploadSuccess}
-                onEDASuccess={onEDASuccess}
-              />
-
+  onUploadSuccess={onUploadSuccess}
+  onEDASuccess={onEDASuccess}
+/>
             </div>
 
           </div>

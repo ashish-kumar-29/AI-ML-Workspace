@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import api from "@/lib/api";
 import { analyzeDataset } from "@/lib/eda";
+import { useRouter } from "next/navigation";
 
 export default function FileUpload({
   onUploadSuccess,
@@ -10,6 +11,7 @@ export default function FileUpload({
 }) {
   const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleButtonClick = () => {
     if (!loading) {
@@ -24,7 +26,9 @@ export default function FileUpload({
 
     const formData = new FormData();
     formData.append("file", file);
+    
 
+    setLoading(true);
     try {
       setLoading(true);
 
@@ -47,13 +51,22 @@ export default function FileUpload({
       if (onEDASuccess) {
         onEDASuccess(edaData);
       }
+      setTimeout(() => {
+    router.push("/dashboard");
+}, 1000);
 
       setLoading(false);
-    } catch (error) {
+    } 
+    
+    catch (error) {
       setLoading(false);
       console.error(error);
       alert("Upload Failed");
     }
+
+    finally {
+  setLoading(false);
+}
   };
 
   return (

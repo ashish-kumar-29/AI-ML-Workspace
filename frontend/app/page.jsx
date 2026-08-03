@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useDataset } from "@/context/DatasetContext";
 
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
@@ -13,8 +13,12 @@ import AIRecommendation from "@/components/AIRecommendation";
 
 
 export default function Home() {
-  const [dataset, setDataset] = useState(null);
-  const [eda, setEda] = useState(null);
+  const {
+  dataset,
+  setDataset,
+  eda,
+  setEda,
+} = useDataset();
 
   return (
   <>
