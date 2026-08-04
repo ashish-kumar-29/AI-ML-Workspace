@@ -9,7 +9,7 @@ export default function Navbar() {
   </span>
 
   <h1 className="text-2xl font-bold text-blue-600">
-    AI ML Workspace
+    DataMind AI
   </h1>
 
 </div>

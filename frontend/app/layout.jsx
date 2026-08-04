@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "AI ML Workspace",
+  title: "DataMind AI | Intelligent Dataset Analysis",
   description: "AI-powered dataset analysis platform",
 };
 
