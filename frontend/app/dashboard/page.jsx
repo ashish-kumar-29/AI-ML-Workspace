@@ -178,7 +178,9 @@ export default function Dashboard() {
 
                 <h2 className="text-4xl font-bold mt-3 text-blue-600">
 
-                  {dataset?.rows ?? "--"}
+                  {dataset
+  ? dataset.rows
+  : "No Data"}
 
                 </h2>
 
@@ -222,7 +224,9 @@ export default function Dashboard() {
 
                 <h2 className="text-4xl font-bold mt-3 text-purple-600">
 
-                  {dataset?.columns ?? "--"}
+                  {dataset
+  ? dataset.columns
+  : "No Data"}
 
                 </h2>
 
@@ -267,13 +271,9 @@ export default function Dashboard() {
                 <h2 className="text-4xl font-bold mt-3 text-orange-600">
 
 
-                  {eda?.basic_info?.memory_usage_mb
-
-                    ? `${eda.basic_info.memory_usage_mb} MB`
-
-                    : "--"
-
-                  }
+                  {eda
+  ? `${eda.basic_info.memory_usage_mb} MB`
+  : "No Data"}
 
 
                 </h2>
@@ -319,8 +319,8 @@ export default function Dashboard() {
                 <h2 className="text-4xl font-bold mt-3 text-green-600">
 
                   {healthScore !== "--"
-                    ? `${healthScore}%`
-                    : "--"}
+  ? `${healthScore}%`
+  : "No Data"}
 
                 </h2>
 
@@ -338,6 +338,82 @@ export default function Dashboard() {
 
 
             </motion.div>
+
+            {!dataset && (
+
+  <motion.div
+
+    initial={{
+      opacity:0,
+      y:30
+    }}
+
+    animate={{
+      opacity:1,
+      y:0
+    }}
+
+    className="mt-10 bg-white rounded-3xl shadow-xl p-10 text-center"
+
+  >
+
+    <div className="text-6xl">
+      📂
+    </div>
+
+
+    <h2 className="text-3xl font-bold mt-5 text-gray-800">
+
+      No Dataset Connected
+
+    </h2>
+
+
+    <p className="text-gray-500 mt-4 text-lg">
+
+      Upload your CSV dataset to unlock AI-powered
+      analysis, visualizations, and machine learning insights.
+
+    </p>
+
+
+    <div className="grid md:grid-cols-4 gap-5 mt-8">
+
+
+      <div className="bg-blue-50 rounded-xl p-5">
+        📊
+        <br/>
+        Smart EDA
+      </div>
+
+
+      <div className="bg-purple-50 rounded-xl p-5">
+        🤖
+        <br/>
+        AI Recommendations
+      </div>
+
+
+      <div className="bg-green-50 rounded-xl p-5">
+        📈
+        <br/>
+        Data Insights
+      </div>
+
+
+      <div className="bg-orange-50 rounded-xl p-5">
+        🧠
+        <br/>
+        ML Guidance
+      </div>
+
+
+    </div>
+
+
+  </motion.div>
+
+)}
 
             
             {/* Analytics Section */}
@@ -437,87 +513,167 @@ export default function Dashboard() {
 
 
 
-              {/* AI Recommendation */}
+              {/* AI Insights */}
+
+<div className="bg-white rounded-3xl shadow-xl p-8">
+
+
+  <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+
+    🤖 AI Insights
+
+  </h2>
 
 
 
-              <div className="bg-white rounded-3xl shadow-xl p-8">
+  <div className="space-y-5">
+
+
+    {dataset ? (
+
+
+      recommendations.map((item, index) => (
+
+
+        <motion.div
+
+          key={index}
+
+          initial={{
+            opacity:0,
+            x:30
+          }}
+
+          animate={{
+            opacity:1,
+            x:0
+          }}
+
+          transition={{
+            delay:index * 0.15
+          }}
+
+
+          className={`rounded-2xl p-5 border-l-8 shadow-sm ${
+            
+            item.type === "success"
+
+            ? "bg-green-50 border-green-500"
+
+            : item.type === "warning"
+
+            ? "bg-yellow-50 border-yellow-500"
+
+            : "bg-blue-50 border-blue-500"
+
+          }`}
+
+        >
 
 
 
-                <h2 className="text-2xl font-bold mb-6">
-
-                  🤖 AI Recommendation
-
-                </h2>
+          <div className="flex items-start gap-4">
 
 
+            <div className="text-3xl">
 
 
-                <div className="space-y-4">
+              {item.type === "success"
+
+                ? "✅"
+
+                : item.type === "warning"
+
+                ? "⚠️"
+
+                : "💡"
+
+              }
 
 
-
-                  {dataset ? (
-
-
-
-                    recommendations.map((item, index) => (
-
-
-                      <div
-
-                        key={index}
-
-                        className={`rounded-xl p-4 border-l-4 ${
-
-                          item.type === "success"
-
-                            ? "bg-green-50 border-green-500"
-
-                            : item.type === "warning"
-
-                            ? "bg-yellow-50 border-yellow-500"
-
-                            : "bg-blue-50 border-blue-500"
-
-                        }`}
-
-                      >
-
-                        {item.text}
-
-
-                      </div>
-
-
-                    ))
+            </div>
 
 
 
-                  ) : (
+
+            <div>
+
+
+              <p className="font-semibold text-gray-800">
+
+                {item.type === "success"
+
+                  ? "Recommendation"
+
+                  : item.type === "warning"
+
+                  ? "Attention Required"
+
+                  : "AI Suggestion"
+
+                }
+
+              </p>
 
 
 
-                    <div className="bg-blue-50 rounded-xl p-5">
+              <p className="text-gray-600 mt-1">
+
+                {item.text}
+
+              </p>
 
 
-                      Upload a dataset to receive AI recommendations.
-
-
-
-                    </div>
-
-
-                  )}
+            </div>
 
 
 
-                </div>
+          </div>
 
 
 
-              </div>
+
+        </motion.div>
+
+
+      ))
+
+
+
+    ) : (
+
+
+      <div className="bg-blue-50 rounded-2xl p-6 text-center">
+
+
+        <div className="text-4xl mb-3">
+
+          📂
+
+        </div>
+
+
+
+        <p className="text-gray-600">
+
+          Upload a dataset to receive AI-powered insights.
+
+        </p>
+
+
+
+      </div>
+
+
+    )}
+
+
+
+  </div>
+
+
+
+</div>
 
 
 

@@ -2,12 +2,38 @@
 
 import { useState, useRef, useEffect } from "react";
 
-export default function AIChat({
+  export default function AIChat({
   dataset,
   eda,
   healthScore,
 }) {
+
+  console.log("AI DATA:", dataset, eda, healthScore);
+
   const [message, setMessage] = useState("");
+
+  const quickQuestions = [
+  {
+    label: "📊 Dataset Summary",
+    question: "Tell me about my dataset"
+  },
+  {
+    label: "⚠ Missing Values",
+    question: "Which columns have missing values?"
+  },
+  {
+    label: "🤖 Best Algorithm",
+    question: "Which algorithm should I use?"
+  },
+  {
+    label: "🧹 Preprocessing",
+    question: "What preprocessing is required?"
+  },
+  {
+    label: "❤️ Data Quality",
+    question: "Is my dataset good?"
+  }
+];
 
   const [messages, setMessages] = useState([
     {
@@ -91,23 +117,33 @@ export default function AIChat({
     return "That's a great question! Once the backend AI is connected, I'll provide intelligent answers based on your uploaded dataset.";
   };
 
-  const handleSend = () => {
-    if (!message.trim()) return;
+  const handleSend = (customMessage = message) => {
 
-    const userMessage = {
-      sender: "user",
-      text: message,
-    };
+  if (!customMessage.trim()) return;
 
-    const aiMessage = {
-      sender: "ai",
-      text: getAIResponse(message),
-    };
 
-    setMessages((prev) => [...prev, userMessage, aiMessage]);
-
-    setMessage("");
+  const userMessage = {
+    sender: "user",
+    text: customMessage,
   };
+
+
+  const aiMessage = {
+    sender: "ai",
+    text: getAIResponse(customMessage),
+  };
+
+
+  setMessages((prev) => [
+    ...prev,
+    userMessage,
+    aiMessage
+  ]);
+
+
+  setMessage("");
+
+};
 
   return (
     <div className="bg-white rounded-3xl shadow-xl p-8">
@@ -145,6 +181,38 @@ export default function AIChat({
 
       </div>
 
+      <div className="flex flex-wrap gap-3 mb-6">
+
+  {quickQuestions.map((item,index)=>(
+
+    <button
+
+      key={index}
+
+      onClick={() => handleSend(item.question)}
+
+      className="
+      px-4 py-2
+      rounded-full
+      bg-blue-50
+      text-blue-700
+      hover:bg-blue-600
+      hover:text-white
+      transition
+      text-sm
+      font-semibold
+      "
+
+    >
+
+      {item.label}
+
+    </button>
+
+  ))}
+
+</div>
+
       <div className="flex gap-4 mt-6">
 
         <input
@@ -153,7 +221,7 @@ export default function AIChat({
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
-              handleSend();
+              handleSend(message);
             }
           }}
           placeholder="Ask AI about your dataset..."

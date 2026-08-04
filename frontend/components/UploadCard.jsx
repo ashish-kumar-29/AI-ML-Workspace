@@ -32,12 +32,12 @@ export default function UploadCard({
             </div>
 
             <h3 className="text-3xl font-bold text-gray-800">
-              Drag & Drop CSV File
+              Upload Your Dataset
             </h3>
 
             <p className="text-gray-600 mt-3 text-lg">
-              or click the button below to browse your computer
-            </p>
+  Drag and drop your CSV file or select it from your device
+</p>
 
             <div className="flex justify-center gap-4 mt-6">
 
