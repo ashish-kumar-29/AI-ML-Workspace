@@ -1,38 +1,56 @@
-export default function Sidebar() {
+"use client";
+
+export default function Sidebar({ active, setActive }) {
+
+  const menu = [
+    { id: "info", label: "Dataset Information", icon: "📄" },
+    { id: "preview", label: "Dataset Preview", icon: "📑" },
+
+    { id: "column", label: "Column Summary", icon: "📋" },
+    { id: "missing", label: "Missing Values", icon: "❗" },
+    { id: "duplicate", label: "Duplicate Analysis", icon: "📌" },
+    { id: "invalid", label: "Invalid Values", icon: "⚠️" },
+
+    { id: "numerical", label: "Numerical Statistics", icon: "📊" },
+    { id: "categorical", label: "Categorical Statistics", icon: "📈" },
+
+    { id: "correlation", label: "Correlation Analysis", icon: "🔥" },
+    { id: "distribution", label: "Distribution Analysis", icon: "📉" },
+    { id: "kurtosis", label: "Kurtosis Analysis", icon: "📐" },
+    { id: "outlier", label: "Outlier Analysis", icon: "📦" },
+
+    { id: "ai", label: "AI Insights", icon: "🤖" },
+  ];
+
   return (
-    <aside className="w-64 bg-slate-900 text-white min-h-screen p-6">
+    <aside className="fixed left-0 top-0 h-screen w-72 bg-white shadow-xl overflow-y-auto">
 
-      <h1 className="text-2xl font-bold mb-8">
-        AI ML Workspace
-      </h1>
+      <div className="text-center py-6 border-b">
+        <h2 className="text-2xl font-bold text-blue-600">
+          Dashboard
+        </h2>
+      </div>
 
-      <nav className="space-y-4">
+      <div className="p-4 space-y-2">
 
-        <button className="w-full text-left p-3 rounded-lg bg-blue-600">
-          📤 Upload
-        </button>
+        {menu.map((item) => (
 
-        <button className="w-full text-left p-3 rounded-lg hover:bg-slate-700">
-          📊 Dataset Intelligence
-        </button>
+          <button
+            key={item.id}
+            onClick={() => setActive(item.id)}
+            className={`w-full text-left px-4 py-3 rounded-lg transition
+            ${
+              active === item.id
+                ? "bg-blue-600 text-white"
+                : "hover:bg-blue-100 text-gray-700"
+            }`}
+          >
+            {item.icon} {item.label}
+          </button>
 
-        <button className="w-full text-left p-3 rounded-lg hover:bg-slate-700">
-          🤖 AI Recommendation
-        </button>
+        ))}
 
-        <button className="w-full text-left p-3 rounded-lg hover:bg-slate-700">
-          🧪 Experiment Lab
-        </button>
-
-        <button className="w-full text-left p-3 rounded-lg hover:bg-slate-700">
-          💬 AI Chat
-        </button>
-
-        <button className="w-full text-left p-3 rounded-lg hover:bg-slate-700">
-          📄 Report
-        </button>
-
-      </nav>
+      </div>
 
     </aside>
   );

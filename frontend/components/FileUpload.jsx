@@ -35,6 +35,7 @@ export default function FileUpload({ onUploadSuccess, onEDASuccess }) {
       const edaData = await analyzeDataset(file);
 
       console.log("EDA Response:", edaData);
+      // console.log(Object.keys(edaData));
       console.log("Basic Info:", edaData.basic_info);
 
       // We'll connect this later
