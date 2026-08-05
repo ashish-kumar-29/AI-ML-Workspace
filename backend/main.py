@@ -17,6 +17,8 @@ from fastapi.encoders import jsonable_encoder
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
+from pydantic import BaseModel
+from services.recommendation import recommend
 
 import math
 import numpy as np
@@ -67,6 +69,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+class RecommendationRequest(BaseModel):
+    query: str
+
 
 @app.get("/")
 def root():
@@ -128,6 +133,7 @@ async def analyze_dataset(file: UploadFile = File(...)):
         "distribution_analysis": distribution_analysis(df),
         "kurtosis_analysis": kurtosis(df),
     }
+    
 
     # report = {}
 
@@ -191,3 +197,23 @@ async def analyze_dataset(file: UploadFile = File(...)):
     print(cleaned_report.keys())
 
     return cleaned_report
+
+@app.post("/recommend")
+async def recommend_movies(data: RecommendationRequest):
+    try:
+        result = recommend(data.query)
+
+        return {
+            "status": "success",
+            "recommendations": result
+        }
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+
+   
