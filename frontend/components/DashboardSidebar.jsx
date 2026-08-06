@@ -38,12 +38,14 @@ export default function DashboardSidebar() {
 
     {
       name:"Upload History",
-      icon:"📂"
+      icon:"📂",
+      path:"/upload-history"
     },
 
     {
       name:"Settings",
-      icon:"⚙️"
+      icon:"⚙️",
+      path:"/settings"
     }
 
   ];
@@ -69,7 +71,6 @@ export default function DashboardSidebar() {
 
       {/* Logo */}
 
-
       <motion.h2
 
         initial={{
@@ -83,10 +84,11 @@ export default function DashboardSidebar() {
         }}
 
         className="
-        text-3xl
+        text-2xl
         font-extrabold
         text-blue-600
         mb-10
+        whitespace-nowrap
         "
 
       >
@@ -106,7 +108,7 @@ export default function DashboardSidebar() {
 
 
         {
-          menuItems.map((item,index)=>{
+          menuItems.map((item)=>{
 
 
             const active = pathname === item.path;
@@ -155,6 +157,83 @@ export default function DashboardSidebar() {
                 >
 
                   <span className="text-xl">
+                    {item.icon}
+                  </span>
+
+
+                  {item.name}
+
+
+                </Link>
+
+
+              </motion.div>
+
+            );
+
+          })
+
+        }
+
+
+
+
+
+
+        {/* Extra Navigation */}
+
+
+        {
+          extraItems.map((item)=>{
+
+
+            const active = pathname === item.path;
+
+
+            return (
+
+              <motion.div
+
+                key={item.name}
+
+                whileHover={{
+                  x:5
+                }}
+
+              >
+
+                <Link
+
+                  href={item.path}
+
+                  className={`
+                    flex
+                    items-center
+                    gap-4
+                    px-5
+                    py-4
+                    rounded-xl
+                    font-semibold
+                    transition
+
+                    ${
+                      active
+
+                      ?
+
+                      "bg-blue-600 text-white shadow-lg"
+
+                      :
+
+                      "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+
+                    }
+
+                  `}
+
+                >
+
+                  <span className="text-xl">
 
                     {item.icon}
 
@@ -171,58 +250,8 @@ export default function DashboardSidebar() {
 
             );
 
+
           })
-        }
-
-
-
-
-        {/* Extra Buttons */}
-
-
-        {
-          extraItems.map((item)=>(
-            
-
-            <motion.button
-
-              key={item.name}
-
-              whileHover={{
-                x:5
-              }}
-
-              className="
-              w-full
-              flex
-              items-center
-              gap-4
-              px-5
-              py-4
-              rounded-xl
-              text-gray-700
-              hover:bg-blue-50
-              hover:text-blue-600
-              transition
-              font-semibold
-              "
-
-            >
-
-              <span className="text-xl">
-
-                {item.icon}
-
-              </span>
-
-
-              {item.name}
-
-
-            </motion.button>
-
-
-          ))
         }
 
 
