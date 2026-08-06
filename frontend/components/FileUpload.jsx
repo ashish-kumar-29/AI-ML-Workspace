@@ -224,7 +224,7 @@ export default function FileUpload({
 
 
 
-        <h3 className="text-xl font-bold text-white">
+        <h3 className="text-xl font-bold text-gray-800">
 
           Upload Dataset for Analysis
 
@@ -233,7 +233,7 @@ export default function FileUpload({
 
 
 
-        <p className="text-blue-100 mt-2">
+        <p className="text-gray-600 mt-2">
 
           Select your CSV file for AI analysis
 
@@ -245,7 +245,7 @@ export default function FileUpload({
         {
           selectedFile && (
 
-            <p className="mt-4 text-sm text-green-300">
+            <p className="mt-4 text-sm text-green-600 font-semibold">
 
               📄 {selectedFile}
 
@@ -358,7 +358,7 @@ export default function FileUpload({
         {
           success && (
 
-            <p className="mt-5 text-green-300">
+            <p className="mt-5 text-green-600 font-semibold">
 
               ✅ {success}
 
@@ -374,7 +374,7 @@ export default function FileUpload({
         {
           error && (
 
-            <p className="mt-5 text-red-300">
+            <p className="mt-5 text-red-600 font-semibold">
 
               ❌ {error}
 

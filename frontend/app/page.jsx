@@ -1,7 +1,9 @@
 "use client";
 
+import FeatureCards from "@/components/FeatureCards";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+
 
 export default function LandingPage() {
 
@@ -9,175 +11,534 @@ export default function LandingPage() {
 
   return (
 
-    <main className="relative overflow-hidden min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-indigo-700 to-purple-900 px-6">
+    <main className="
+relative
+overflow-hidden
+min-h-screen
+flex
+items-center
+justify-center
+bg-gradient-to-br
+from-slate-950
+via-blue-950
+to-black
+px-6
+">
 
-      {/* Animated Background */}
 
-{/* Animated Background */}
+      {/* Futuristic Grid Background */}
 
-<div className="absolute inset-0">
+      {/* AI Grid Background */}
 
-  <motion.div
-    animate={{
-      x: [0, 80, 0],
-      y: [0, 50, 0],
-    }}
-    transition={{
-      duration: 8,
-      repeat: Infinity,
-      ease: "easeInOut",
-    }}
-    className="absolute top-10 left-10 w-96 h-96 bg-blue-400/30 rounded-full blur-3xl"
-  />
+<div
+className="
+absolute
+inset-0
+opacity-20
+bg-[linear-gradient(#38bdf8_1px,transparent_1px),linear-gradient(90deg,#38bdf8_1px,transparent_1px)]
+bg-[size:50px_50px]
+"
+/>
 
-  <motion.div
-    animate={{
-      x: [0, -100, 0],
-      y: [0, 80, 0],
-    }}
-    transition={{
-      duration: 10,
-      repeat: Infinity,
-      ease: "easeInOut",
-    }}
-    className="absolute bottom-10 right-10 w-[450px] h-[450px] bg-purple-500/30 rounded-full blur-3xl"
-  />
 
-  <motion.div
-    animate={{
-      scale: [1, 1.3, 1],
-    }}
-    transition={{
-      duration: 6,
-      repeat: Infinity,
-    }}
-    className="absolute top-1/2 left-1/3 w-72 h-72 bg-cyan-400/30 rounded-full blur-3xl"
-  />
 
-</div>
+      {/* Animated Glow Background */}
+
+
+      <div className="absolute inset-0">
+
+
+        <motion.div
+
+          animate={{
+            x:[0,80,0],
+            y:[0,50,0],
+          }}
+
+          transition={{
+            duration:8,
+            repeat:Infinity,
+            ease:"easeInOut"
+          }}
+
+          className="
+          absolute
+          top-10
+          left-10
+          w-96
+          h-96
+          bg-green-400/20
+          rounded-full
+          blur-3xl
+          "
+
+        />
+
+
+
+        <motion.div
+
+          animate={{
+            x:[0,-100,0],
+            y:[0,80,0],
+          }}
+
+          transition={{
+            duration:10,
+            repeat:Infinity,
+            ease:"easeInOut"
+          }}
+
+          className="
+          absolute
+          bottom-10
+          right-10
+          w-[450px]
+          h-[450px]
+          bg-blue-500/20
+          rounded-full
+          blur-3xl
+          "
+
+        />
+
+
+
+        <motion.div
+
+          animate={{
+            scale:[1,1.3,1]
+          }}
+
+          transition={{
+            duration:6,
+            repeat:Infinity
+          }}
+
+          className="
+          absolute
+          top-1/2
+          left-1/3
+          w-72
+          h-72
+          bg-purple-500/20
+          rounded-full
+          blur-3xl
+          "
+
+        />
+
+
+      </div>
+
+
+
+
 
       <motion.div
-  initial={{ opacity:0, y:50 }}
-  animate={{ opacity:1, y:0 }}
-  transition={{
-  duration: 1.5,
-  ease: "easeOut"
-}}
-  className="relative z-10 max-w-5xl text-center text-white"
->
+
+        initial={{
+          opacity:0,
+          y:50
+        }}
+
+        animate={{
+          opacity:1,
+          y:0
+        }}
+
+        transition={{
+          duration:2.5
+        }}
+
+        className="
+        relative
+        z-10
+        max-w-5xl
+        text-center
+        text-white
+        "
+
+      >
+
+
 
         {/* Logo */}
 
-        <div className="text-7xl mb-8">
+
+        <motion.div
+
+          initial={{
+            scale:0,
+            opacity:0
+          }}
+
+          animate={{
+            scale:1,
+            opacity:1
+          }}
+
+          transition={{
+            duration:2
+          }}
+
+          className="
+          text-7xl
+          mb-8
+          "
+
+        >
+
           🤖
-        </div>
+
+        </motion.div>
+
+
+
 
 
         {/* Heading */}
 
-        <h1 className="text-6xl md:text-7xl font-extrabold leading-tight">
+
+        <motion.h1
+
+          initial={{
+            scale:0.3,
+            opacity:0
+          }}
+
+          animate={{
+            scale:1,
+            opacity:1
+          }}
+
+          transition={{
+            duration:2.6,
+            ease:"easeOut"
+          }}
+
+          className="
+          text-6xl
+          md:text-7xl
+          font-extrabold
+          leading-tight
+          "
+
+        >
 
           DataMind
-          <span className="text-blue-300">
+
+          <span className="text-cyan-400">
+
             {" "}AI
+
           </span>
 
-        </h1>
+
+        </motion.h1>
+
+                {/* First Description */}
 
 
-        <p className="mt-6 text-xl md:text-2xl text-blue-100 max-w-4xl mx-auto leading-relaxed">
+        <motion.p
 
-  AI ML Workspace is an intelligent data analysis platform
-  designed to simplify the machine learning workflow.
-  Upload your datasets, automatically perform exploratory
-  data analysis, visualize important patterns, identify
-  data quality issues, and receive AI-powered recommendations
-  for preprocessing and machine learning models.
+          initial={{
+            x:-150,
+            opacity:0
+          }}
 
-</p>
+          animate={{
+            x:0,
+            opacity:1
+          }}
 
-<p className="mt-5 text-lg text-blue-200">
+          transition={{
+            duration:1.9,
+            delay:2.3
+          }}
 
-  Transform raw data into meaningful insights with the power
-  of Artificial Intelligence and Machine Learning.
+          className="
+          mt-6
+          text-xl
+          md:text-2xl
+          text-gray-200
+          max-w-4xl
+          mx-auto
+          leading-relaxed
+          "
 
-</p>
+        >
+
+          AI ML Workspace is an intelligent data analysis platform
+          designed to simplify the machine learning workflow.
+          Upload your datasets, automatically perform exploratory
+          data analysis, visualize important patterns, identify
+          data quality issues, and receive AI-powered recommendations
+          for preprocessing and machine learning models.
+
+
+        </motion.p>
+
+
+
+
+
+        {/* Second Description */}
+
+
+        <motion.p
+
+          initial={{
+            x:150,
+            opacity:0
+          }}
+
+          animate={{
+            x:0,
+            opacity:1
+          }}
+
+          transition={{
+            duration:1.9,
+            delay:2.5
+          }}
+
+          className="
+          mt-5
+          text-lg
+          text-green-200
+          "
+
+        >
+
+          Transform raw data into meaningful insights with the power
+          of Artificial Intelligence and Machine Learning.
+
+
+        </motion.p>
+
+
+
+
+
 
 
         {/* Features */}
 
-        <div className="grid md:grid-cols-3 gap-6 mt-12">
 
-
-          <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-6">
-
-            <h3 className="text-xl font-bold">
-              📊 Smart EDA
-            </h3>
-
-            <p className="mt-2 text-blue-100">
-              Automatically understand your dataset.
-            </p>
-
-          </div>
+        <div className="
+          grid
+          md:grid-cols-3
+          gap-6
+          mt-12
+        ">
 
 
 
-          <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-6">
+          {[
+            {
+              icon:"📊",
+              title:"Smart EDA",
+              text:"Automatically understand your dataset."
+            },
 
-            <h3 className="text-xl font-bold">
-              🤖 AI Assistant
-            </h3>
+            {
+              icon:"🤖",
+              title:"AI Assistant",
+              text:"Ask questions about your data."
+            },
 
-            <p className="mt-2 text-blue-100">
-              Ask questions about your data.
-            </p>
+            {
+              icon:"📈",
+              title:"ML Insights",
+              text:"Get recommendations for models."
+            }
 
-          </div>
+          ].map((item,index)=>(
 
 
+            <motion.div
 
-          <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-6">
+              key={index}
 
-            <h3 className="text-xl font-bold">
-              📈 ML Insights
-            </h3>
+              initial={{
+                opacity:0,
+                y:50
+              }}
 
-            <p className="mt-2 text-blue-100">
-              Get recommendations for models.
-            </p>
+              animate={{
+                opacity:1,
+                y:0
+              }}
 
-          </div>
+              transition={{
+                delay:3 + index*0.5
+              }}
+
+
+              className="
+              bg-white/40
+              backdrop-blur-lg
+              border
+              bg-cyan-400/20
+              rounded-3xl
+              p-6
+              shadow-[0_0_35px_rgba(34,211,238,0.6)]
+              "
+
+            >
+
+              <h3 className="
+              text-xl
+              font-bold
+              text-white
+              ">
+
+                {item.icon} {item.title}
+
+              </h3>
+
+
+              <p className="
+              mt-2
+              text-gray-300
+              ">
+
+                {item.text}
+
+              </p>
+
+
+            </motion.div>
+
+
+          ))}
 
 
         </div>
+
+        <FeatureCards />
+
+
+
+
 
 
 
         {/* Button */}
 
-        <motion.button
-  whileHover={{
-    scale: 1.1,
-  }}
-  whileTap={{
-    scale: 0.95,
-  }}
-  onClick={() => router.push("/home")}
 
-          className="mt-14 px-12 py-4 rounded-full bg-white text-indigo-700 text-xl font-bold shadow-2xl hover:scale-110 transition duration-300"
+
+        <motion.button
+
+          initial={{
+            opacity:0,
+            x:-300
+          }}
+
+          animate={{
+            opacity:1,
+            x:0
+          }}
+
+          transition={{
+            duration:2,
+            delay:4.5,
+            ease:"easeOut"
+          }}
+
+          whileHover={{
+            scale:1.08
+          }}
+
+          whileTap={{
+            scale:0.95
+          }}
+
+          onClick={()=>router.push("/home")}
+
+          className="
+          relative
+          overflow-hidden
+          mt-14
+          px-12
+          py-4
+          rounded-full
+          bg-cyan-400
+          text-black
+          text-xl
+          font-bold
+          shadow-[0_0_35px_rgba(34,197,94,0.6)]
+          "
 
         >
 
-          🚀 Get Started
+
+          <motion.span
+
+            animate={{
+              x:["-150%","150%"]
+            }}
+
+            transition={{
+              duration:2,
+              repeat:Infinity,
+              ease:"linear"
+            }}
+
+            className="
+            absolute
+            inset-0
+            bg-gradient-to-r
+            from-transparent
+            via-white/50
+            to-transparent
+            "
+
+          />
+
+
+          <span className="relative">
+
+            🚀 Get Started
+
+          </span>
+
 
         </motion.button>
 
-        <p className="mt-8 text-blue-200 text-sm">
 
-  Powered by CodeAlchaemy
 
-</p>
+
+
+
+
+        <motion.p
+
+          initial={{
+            opacity:0
+          }}
+
+          animate={{
+            opacity:1
+          }}
+
+          transition={{
+            delay:3.3
+          }}
+
+          className="
+          mt-8
+          text-green-200
+          text-sm
+          "
+
+        >
+
+          Powered by CodeAlchaemy
+
+        </motion.p>
+
 
 
       </motion.div>

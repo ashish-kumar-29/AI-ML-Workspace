@@ -1,39 +1,195 @@
 export default function HeroSection() {
   return (
-    <section className="text-center mb-12">
+    <section className="text-center mb-12 relative z-10">
 
-      <div className="inline-block px-5 py-2 rounded-full bg-blue-100 text-blue-700 font-semibold text-sm mb-6 shadow">
+
+      {/* Badge */}
+
+      <div
+        className="
+        inline-block
+        px-5
+        py-2
+        rounded-full
+        bg-cyan-400/10
+        border
+        border-cyan-400/30
+        text-cyan-300
+        font-semibold
+        text-sm
+        mb-6
+        shadow-lg
+        "
+      >
+
         🚀 AI Powered Machine Learning Platform
+
       </div>
 
-      <h1 className="text-6xl font-extrabold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-        AI ML Workspace
+
+
+
+
+      {/* Heading */}
+
+
+      <h1
+        className="
+        text-6xl
+        font-extrabold
+        bg-gradient-to-r
+        from-cyan-300
+        via-blue-400
+        to-purple-400
+        bg-clip-text
+        text-transparent
+        "
+      >
+
+        DataMind AI
+
       </h1>
 
-      <p className="text-2xl text-gray-700 mt-6 font-medium">
+
+
+
+
+
+      {/* Tagline */}
+
+
+      <p
+        className="
+        text-2xl
+        text-white
+        mt-6
+        font-medium
+        "
+      >
+
         Analyze • Visualize • Train Models
+
       </p>
 
-      <p className="text-gray-500 mt-5 max-w-3xl mx-auto leading-8 text-lg">
-        Upload your datasets, explore detailed statistics, visualize insights,
-        and build machine learning models — all from one modern AI workspace.
+
+
+
+
+
+      {/* Description */}
+
+
+      <p
+        className="
+        text-gray-300
+        mt-5
+        max-w-3xl
+        mx-auto
+        leading-8
+        text-lg
+        "
+      >
+
+        Upload your datasets, explore detailed statistics,
+        visualize insights, and build machine learning models —
+        all from one modern AI workspace.
+
       </p>
 
-      <div className="flex justify-center gap-6 mt-10 flex-wrap">
 
-        <div className="bg-white shadow-lg rounded-xl px-6 py-4">
+
+
+
+
+      {/* Feature Cards */}
+
+
+      <div
+        className="
+        flex
+        justify-center
+        gap-6
+        mt-10
+        flex-wrap
+        "
+      >
+
+
+
+        <div
+          className="
+          bg-white/5
+          backdrop-blur-xl
+          border
+          border-cyan-400/20
+          text-white
+          shadow-xl
+          rounded-xl
+          px-8
+          py-5
+          hover:scale-105
+          transition
+          "
+        >
+
           📂 CSV Upload
+
         </div>
 
-        <div className="bg-white shadow-lg rounded-xl px-6 py-4">
+
+
+
+
+        <div
+          className="
+          bg-white/5
+          backdrop-blur-xl
+          border
+          border-blue-400/20
+          text-white
+          shadow-xl
+          rounded-xl
+          px-8
+          py-5
+          hover:scale-105
+          transition
+          "
+        >
+
           📊 Data Analytics
+
         </div>
 
-        <div className="bg-white shadow-lg rounded-xl px-6 py-4">
+
+
+
+
+
+        <div
+          className="
+          bg-white/5
+          backdrop-blur-xl
+          border
+          border-purple-400/20
+          text-white
+          shadow-xl
+          rounded-xl
+          px-8
+          py-5
+          hover:scale-105
+          transition
+          "
+        >
+
           🤖 ML Models
+
         </div>
+
+
 
       </div>
+
+
 
     </section>
   );

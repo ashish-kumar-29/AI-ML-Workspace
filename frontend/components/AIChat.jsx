@@ -213,7 +213,7 @@ import { useState, useRef, useEffect } from "react";
 
 </div>
 
-      <div className="flex gap-4 mt-6">
+      <div className="flex flex-col sm:flex-row gap-4 mt-6">
 
         <input
           type="text"

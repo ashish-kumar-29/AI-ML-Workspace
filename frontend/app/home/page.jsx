@@ -24,7 +24,50 @@ export default function Home() {
   <>
     <Navbar />
 
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 pt-28 pb-16 px-6">
+    <main className="
+relative
+overflow-hidden
+min-h-screen
+bg-gradient-to-br
+from-slate-950
+via-blue-950
+to-black
+pt-28
+pb-16
+px-6
+">
+
+  {/* AI Background Glow */}
+
+<div className="absolute inset-0 -z-0">
+
+  <div
+    className="
+    absolute
+    top-20
+    left-20
+    w-96
+    h-96
+    bg-cyan-400/20
+    rounded-full
+    blur-3xl
+    "
+  />
+
+  <div
+    className="
+    absolute
+    bottom-20
+    right-20
+    w-[450px]
+    h-[450px]
+    bg-blue-500/20
+    rounded-full
+    blur-3xl
+    "
+  />
+
+</div>
 
       {/* Hero */}
       <HeroSection />

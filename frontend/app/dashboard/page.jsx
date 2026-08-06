@@ -38,15 +38,25 @@ export default function Dashboard() {
       <Navbar />
 
 
-      <main className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-blue-50 pt-28 pb-10 px-6">
+      <main className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-blue-50 pt-24 pb-10 px-4 md:px-6">
 
 
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
+        <div className="
+max-w-[1400px]
+mx-auto
+flex
+flex-col
+lg:flex-row
+gap-10
+px-4
+">
 
 
           {/* Sidebar */}
 
-          <DashboardSidebar />
+          <div className="lg:w-64 flex-shrink-0">
+  <DashboardSidebar />
+</div>
 
 
 
@@ -79,7 +89,7 @@ export default function Dashboard() {
             >
 
 
-              <h1 className="text-5xl font-extrabold text-gray-800">
+              <h1 className="text-3xl md:text-5xl font-extrabold text-gray-800">
 
                 DataMind AI Dashboard
 
@@ -716,7 +726,7 @@ export default function Dashboard() {
 
 
 
-              <div className="bg-white rounded-3xl shadow-xl p-8">
+              <div className="bg-white rounded-3xl shadow-xl p-6 overflow-hidden">
 
 
 
