@@ -14,14 +14,23 @@ from modules import (
 )
 
 from fastapi.encoders import jsonable_encoder
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
+from fastapi.responses import StreamingResponse
+from io import StringIO
+import json
 from pydantic import BaseModel
-from services.recommendation import recommend
-
+from services.ai_service import analyze_dataset
+from services.cleaning_service import apply_cleaning
+from services.report_service import compare_reports
+from services.summary_service import create_summary
+from services.quality_service import calculate_score
 import math
 import numpy as np
+
+
+
 
 def clean_nan(obj, path="root"):
     if isinstance(obj, dict):
@@ -52,6 +61,27 @@ def clean_nan(obj, path="root"):
 
     return obj
 
+def generate_report(df):
+
+    report = {
+        "basic_info": basic_info(df),
+        "column_summary": col_summary(df),
+        "missing_analysis": missing_values(df),
+        "duplicate_analysis": duplicate_values(df),
+        "invalid_value_analysis": invalid_values(df),
+        "numerical_statistics": numerical_statistics(df),
+        "categorical_statistics": categorical_statistics(df),
+        "datetime_statistics": datetime_statistics(df),
+        "outlier_analysis": check_outliers(df),
+        "correlation_analysis": check_correlation(df),
+        "distribution_analysis": distribution_analysis(df),
+        "kurtosis_analysis": kurtosis(df),
+    }
+
+    return clean_nan(report)
+
+
+
 app = FastAPI(
     title="AI ML Workspace API",
     description="Backend API for AI-Powered ML Workspace",
@@ -69,8 +99,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-class RecommendationRequest(BaseModel):
-    query: str
+
 
 
 @app.get("/")
@@ -116,104 +145,146 @@ async def upload_csv(file: UploadFile = File(...)):
 
 
 @app.post("/eda")
-async def analyze_dataset(file: UploadFile = File(...)):
+async def eda_endpoint(file: UploadFile = File(...)):
+
     df = pd.read_csv(file.file)
 
-    report = {
-        "basic_info": basic_info(df),
-        "column_summary": col_summary(df),
-        "missing_analysis": missing_values(df),
-        "duplicate_analysis": duplicate_values(df),
-        "invalid_value_analysis": invalid_values(df),
-        "numerical_statistics": numerical_statistics(df),
-        "categorical_statistics": categorical_statistics(df),
-        "datetime_statistics": datetime_statistics(df),
-        "outlier_analysis": check_outliers(df),
-        "correlation_analysis": check_correlation(df),
-        "distribution_analysis": distribution_analysis(df),
-        "kurtosis_analysis": kurtosis(df),
+    report = generate_report(df)
+
+    return report
+    
+
+
+@app.post("/ai-insights")
+async def ai_insights(file: UploadFile = File(...)):
+
+    df = pd.read_csv(file.file)
+
+    report = generate_report(df)
+
+    result = analyze_dataset(report)
+
+    return result
+
+@app.post("/clean")
+async def clean_dataset(
+    file: UploadFile = File(...),
+    operations: str = Form(...)
+):
+    # Read uploaded CSV
+    df = pd.read_csv(file.file)
+
+    # Convert operations JSON string to Python list
+    operations = json.loads(operations)
+
+    # -----------------------
+    # BEFORE CLEANING
+    # -----------------------
+
+    report_before = generate_report(df)
+
+    summary_before = create_summary(report_before)
+
+    score_before = calculate_score(summary_before)
+
+    # -----------------------
+    # APPLY CLEANING
+    # -----------------------
+
+    cleaned_df = apply_cleaning(df, operations)
+
+    # -----------------------
+    # AFTER CLEANING
+    # -----------------------
+
+    report_after = generate_report(cleaned_df)
+
+    summary_after = create_summary(report_after)
+
+    score_after = calculate_score(summary_after)
+
+    # -----------------------
+    # COMPARE
+    # -----------------------
+
+    comparison = compare_reports(
+
+        {
+            "score": score_before,
+            "summary": summary_before
+        },
+
+        {
+            "score": score_after,
+            "summary": summary_after
+        }
+
+    )
+
+    # -----------------------
+    # RETURN
+    # -----------------------
+
+    return {
+
+        "comparison": comparison,
+
+        "before": {
+
+            "score": score_before,
+
+            "summary": summary_before
+
+        },
+
+        "after": {
+
+            "score": score_after,
+
+            "summary": summary_after
+
+        },
+
+        "preview": (
+
+            cleaned_df
+            .head()
+            .replace({np.nan: None})
+            .to_dict(orient="records")
+
+        )
+
     }
-    
 
-    # report = {}
+@app.post("/download")
+async def download_cleaned_csv(
+    file: UploadFile = File(...),
+    operations: str = Form(...)
+):
 
-    # report["basic_info"] = basic_info(df)
-    # print("basic_info OK")
+    # Read CSV
+    df = pd.read_csv(file.file)
 
-    # report["column_summary"] = col_summary(df)
-    # print("column_summary OK")
+    # Convert operations
+    operations = json.loads(operations)
 
-    # report["missing_analysis"] = missing_values(df)
-    # print("missing_analysis OK")
+    # Apply cleaning
+    cleaned_df = apply_cleaning(df, operations)
 
-    # report["duplicate_analysis"] = duplicate_values(df)
-    # print("duplicate_analysis OK")
+    # Convert DataFrame to CSV
+    output = StringIO()
 
-    # report["invalid_value_analysis"] = invalid_values(df)
-    # print("invalid_value_analysis OK")
+    cleaned_df.to_csv(output, index=False)
 
-    # report["numerical_statistics"] = numerical_statistics(df)
-    # print("numerical_statistics OK")
+    output.seek(0)
 
-    # report["categorical_statistics"] = categorical_statistics(df)
-    # print("categorical_statistics OK")
-
-    # report["datetime_statistics"] = datetime_statistics(df)
-    # print("datetime_statistics OK")
-
-    # report["outlier_analysis"] = check_outliers(df)
-    # print("outlier_analysis OK")
-
-    # report["correlation_analysis"] = check_correlation(df)
-    # print("correlation_analysis OK")
-
-    # report["distribution_analysis"] = distribution_analysis(df)
-    # print("distribution_analysis OK")
-
-    # report["kurtosis_analysis"] = kurtosis(df)
-    # print("kurtosis_analysis OK")
-
-    # return report
-    # return clean_nan(report)
-
-    # import json
-
-    # cleaned_report = clean_nan(report)
-
-    # print("Cleaning completed")
-
-    import json
-
-    for name, value in report.items():
-        print(f"Testing {name}...")
-
-        json.dumps(value, allow_nan=False)
-
-        print(f"✅ {name} OK")
-
-    cleaned_report = clean_nan(report)
-    
-    print("🚀 Returning full EDA report")
-    print(cleaned_report.keys())
-
-    return cleaned_report
-
-@app.post("/recommend")
-async def recommend_movies(data: RecommendationRequest):
-    try:
-        result = recommend(data.query)
-
-        return {
-            "status": "success",
-            "recommendations": result
+    return StreamingResponse(
+        output,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=cleaned_dataset.csv"
         }
-
-    except Exception as e:
-        return {
-            "status": "error",
-            "message": str(e)
-        }
-
+    )
 
 
    
