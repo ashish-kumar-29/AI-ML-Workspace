@@ -16,6 +16,7 @@ def analyze_dataset(report):
     3. Builds Gemini prompt
     """
 
+
     summary = create_summary(
         report
     )
@@ -23,6 +24,50 @@ def analyze_dataset(report):
 
     score = calculate_score(
         summary
+    )
+
+
+    # ========================================================
+    # ADD EDA DETAILS FOR GEMINI
+    # ========================================================
+
+    summary["column_summary"] = (
+        report.get(
+            "column_summary",
+            {}
+        )
+    )
+
+
+    summary["numerical_statistics"] = (
+        report.get(
+            "numerical_statistics",
+            {}
+        )
+    )
+
+
+    summary["categorical_statistics"] = (
+        report.get(
+            "categorical_statistics",
+            {}
+        )
+    )
+
+
+    summary["outlier_analysis"] = (
+        report.get(
+            "outlier_analysis",
+            {}
+        )
+    )
+
+
+    summary["invalid_value_analysis"] = (
+        report.get(
+            "invalid_value_analysis",
+            {}
+        )
     )
 
 

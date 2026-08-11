@@ -1,98 +1,128 @@
-
 "use client";
 
 export default function PreviewTable({ data }) {
 
-    if (!data) return null;
+  if (!data?.preview?.length) {
+    return null;
+  }
 
-    if (!data.preview || !data.preview.length) {
-
-        return (
-            <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-6">
-                <p className="text-sm text-gray-400">
-                    No preview data available.
-                </p>
-            </div>
-        );
-    }
+  const headers = Object.keys(
+    data.preview[0]
+  ).filter(
+    (header) =>
+      header !== "Unnamed: 0"
+  );
 
 
-    const headers = Object.keys(
-        data.preview[0]
-    );
+  return (
+
+    <div className="mt-8 bg-white rounded-2xl shadow-xl p-6 w-full min-w-0">
+
+      <h2 className="text-3xl font-bold text-blue-600 mb-6">
+        Dataset Preview
+      </h2>
 
 
-    return (
+      {/* ======================================================
+          TABLE CONTAINER
+          Horizontal scrolling stays INSIDE this container.
+      ====================================================== */}
 
-        <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-6">
+      <div className="w-full max-w-full overflow-x-auto">
 
-            <h2 className="mb-4 text-lg font-semibold text-white">
-                Dataset Preview
-            </h2>
+        <table className="min-w-max border border-gray-300">
 
+          <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
 
-            <div className="overflow-x-auto">
+            <tr>
 
-                <table className="min-w-full text-sm">
-
-                    <thead>
-
-                        <tr className="border-b border-white/10">
-
-                            {headers.map((header) => (
-
-                                <th
-                                    key={header}
-                                    className="px-4 py-3 text-left font-medium text-gray-300"
-                                >
-                                    {header}
-                                </th>
-
-                            ))}
-
-                        </tr>
-
-                    </thead>
+              <th className="px-5 py-4 border whitespace-nowrap text-center font-semibold">
+                S.No.
+              </th>
 
 
-                    <tbody>
+              {headers.map(
+                (header) => (
 
-                        {data.preview.map(
-                            (row, index) => (
+                  <th
+                    key={header}
+                    className="px-5 py-4 border whitespace-nowrap text-center font-semibold"
+                  >
+                    {header}
+                  </th>
 
-                                <tr
-                                    key={index}
-                                    className="border-b border-white/5"
-                                >
+                )
+              )}
 
-                                    {headers.map(
-                                        (header) => (
+            </tr>
 
-                                            <td
-                                                key={header}
-                                                className="px-4 py-3 text-gray-400"
-                                            >
-                                                {row[header] === null ||
-                                                row[header] === undefined
-                                                    ? "-"
-                                                    : String(row[header])}
-                                            </td>
+          </thead>
 
-                                        )
-                                    )}
 
-                                </tr>
+          <tbody className="text-gray-800">
 
-                            )
-                        )}
+            {data.preview.map(
+              (row, index) => (
 
-                    </tbody>
+                <tr
+                  key={index}
+                  className={`${
+                    index % 2 === 0
+                      ? "bg-white"
+                      : "bg-gray-50"
+                  } hover:bg-blue-50 transition`}
+                >
 
-                </table>
+                  {/* S.NO. */}
 
-            </div>
+                  <td className="border px-5 py-3 text-center text-sm whitespace-nowrap">
+                    {index + 1}
+                  </td>
 
-        </div>
 
-    );
+                  {/* DATA */}
+
+                  {headers.map(
+                    (header) => (
+
+                      <td
+                        key={header}
+                        className="border px-5 py-3 text-sm whitespace-nowrap"
+                      >
+                        {row[header] === null ||
+                        row[header] === undefined ||
+                        row[header] === ""
+                          ? "-"
+                          : String(
+                              row[header]
+                            )}
+                      </td>
+
+                    )
+                  )}
+
+                </tr>
+
+              )
+            )}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+
+      {/* ======================================================
+          HELPER TEXT
+      ====================================================== */}
+
+      <p className="text-xs text-gray-400 mt-3">
+        Scroll horizontally to view all columns.
+      </p>
+
+    </div>
+
+  );
+
 }

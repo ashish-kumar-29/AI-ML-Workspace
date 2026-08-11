@@ -46,6 +46,9 @@ export default function Home() {
 
   const [aiError, setAiError] = useState(null);
 
+  const aiRecommendations =
+  aiInsights?.recommendations || [];
+
 
   // ============================================================
   // CLEANING
@@ -614,12 +617,12 @@ export default function Home() {
 
                 <>
 
-                  <CleaningPanel
-                    file={uploadedFile}
-                    onCleaned={
-                      handleCleaned
-                    }
-                  />
+                 <CleaningPanel
+  file={uploadedFile}
+  eda={eda}
+  aiRecommendations={aiRecommendations}
+  onCleaned={handleCleaned}
+/>
 
 
                   {cleaningResult && (
