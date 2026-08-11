@@ -1,60 +1,98 @@
+
+"use client";
+
 export default function PreviewTable({ data }) {
-  if (!data.preview.length) return null;
 
-  const headers = Object.keys(data.preview[0]).filter(
-    (header) => header !== "Unnamed: 0"
-  );
+    if (!data) return null;
 
-  return (
-    <div className="mt-8 bg-white rounded-2xl shadow-xl p-6">
-      <h2 className="text-3xl font-bold text-blue-600 mb-6">
-        Dataset Preview
-      </h2>
+    if (!data.preview || !data.preview.length) {
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full border">
-          <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-            <tr>
-              <th className="px-6 py-4 border whitespace-nowrap text-center font-semibold">
-                S.No.
-              </th>
+        return (
+            <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-6">
+                <p className="text-sm text-gray-400">
+                    No preview data available.
+                </p>
+            </div>
+        );
+    }
 
-              {headers.map((header) => (
-                <th
-                  key={header}
-                  className="px-6 py-4 border whitespace-nowrap text-center font-semibold"
-                >
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
 
-          <tbody className="text-gray-800">
-            {data.preview.map((row, index) => (
-              <tr
-                key={index}
-                className={`${
-                  index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                } hover:bg-blue-50 transition`}
-              >
-                <td className="border px-5 py-3 text-center text-sm text-gray-800">
-                  {index + 1}
-                </td>
+    const headers = Object.keys(
+        data.preview[0]
+    );
 
-                {headers.map((header) => (
-                  <td
-                    key={header}
-                    className="border px-5 py-3 whitespace-nowrap text-sm text-gray-800"
-                  >
-                    {String(row[header])}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+
+    return (
+
+        <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-6">
+
+            <h2 className="mb-4 text-lg font-semibold text-white">
+                Dataset Preview
+            </h2>
+
+
+            <div className="overflow-x-auto">
+
+                <table className="min-w-full text-sm">
+
+                    <thead>
+
+                        <tr className="border-b border-white/10">
+
+                            {headers.map((header) => (
+
+                                <th
+                                    key={header}
+                                    className="px-4 py-3 text-left font-medium text-gray-300"
+                                >
+                                    {header}
+                                </th>
+
+                            ))}
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {data.preview.map(
+                            (row, index) => (
+
+                                <tr
+                                    key={index}
+                                    className="border-b border-white/5"
+                                >
+
+                                    {headers.map(
+                                        (header) => (
+
+                                            <td
+                                                key={header}
+                                                className="px-4 py-3 text-gray-400"
+                                            >
+                                                {row[header] === null ||
+                                                row[header] === undefined
+                                                    ? "-"
+                                                    : String(row[header])}
+                                            </td>
+
+                                        )
+                                    )}
+
+                                </tr>
+
+                            )
+                        )}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    );
 }

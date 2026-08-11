@@ -1,53 +1,83 @@
+SEVERITY_ORDER = {
+    "Critical": 0,
+    "High": 1,
+    "Medium": 2,
+    "Low": 3,
+    "None": 4
+}
+
+
+MAX_ISSUES_IN_PROMPT = 10
+
+
 def build_prompt(summary, score):
-    """
-    Converts the dataset summary into a prompt for Gemini.
-    """
+
+    issues = sorted(
+        summary.get("issues", []),
+        key=lambda x: SEVERITY_ORDER.get(
+            x.get("severity", "None"),
+            99
+        )
+    )[:MAX_ISSUES_IN_PROMPT]
+
+
+    if issues:
+
+        issue_lines = "\n".join(
+
+            f"- Column: {issue.get('column')} | "
+            f"Problem: {issue.get('problem')} | "
+            f"Count: {issue.get('count')} | "
+            f"Severity: {issue.get('severity')}"
+
+            for issue in issues
+
+        )
+
+    else:
+
+        issue_lines = (
+            "No major data quality issues detected."
+        )
+
 
     prompt = f"""
-You are an expert Data Scientist.
+You are an experienced Data Scientist.
 
-Analyze the dataset.
+Analyze the dataset quality information below.
 
-Dataset Health Score: {score}/100
+Health Score: {score}/100
 
-Dataset Information:
+Dataset:
+- Rows: {summary['metadata'].get('rows', 0)}
+- Columns: {summary['metadata'].get('columns', 0)}
 
-Rows : {summary["metadata"]["rows"]}
+Detected Issues:
+{issue_lines}
 
-Columns : {summary["metadata"]["columns"]}
+For every detected issue, provide a practical recommendation.
 
-Problems Found:
-
-"""
-
-    for issue in summary["issues"]:
-
-        prompt += f"""
-
-Column : {issue["column"]}
-
-Problem : {issue["problem"]}
-
-Count : {issue["count"]}
-
-Severity : {issue["severity"]}
-
-"""
-
-    prompt += """
-
-Recommend preprocessing steps.
-
-For every issue provide:
+Each recommendation must contain:
 
 1. Recommendation
-
 2. Reason
-
 3. Alternative
 
-Return your answer in JSON.
+Return ONLY valid JSON.
 
+Required format:
+
+[
+  {{
+    "Recommendation": "string",
+    "Reason": "string",
+    "Alternative": "string"
+  }}
+]
+
+Do not include markdown.
+Do not include explanations outside the JSON.
 """
 
-    return prompt
+
+    return prompt.strip()

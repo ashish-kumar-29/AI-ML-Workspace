@@ -1,3 +1,12 @@
+
+import json
+import pandas as pd
+
+
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form
+from fastapi.middleware.cors import CORSMiddleware
+
+
 from modules import (
     basic_info,
     col_summary,
@@ -10,281 +19,550 @@ from modules import (
     check_outliers,
     check_correlation,
     distribution_analysis,
-    kurtosis,
+    kurtosis
 )
 
-from fastapi.encoders import jsonable_encoder
-from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.middleware.cors import CORSMiddleware
-import pandas as pd
-from fastapi.responses import StreamingResponse
-from io import StringIO
-import json
-from pydantic import BaseModel
+
 from services.ai_service import analyze_dataset
+from services.gemini_service import get_ai_recommendations
 from services.cleaning_service import apply_cleaning
-from services.report_service import compare_reports
-from services.summary_service import create_summary
-from services.quality_service import calculate_score
-import math
-import numpy as np
 
 
-
-
-def clean_nan(obj, path="root"):
-    if isinstance(obj, dict):
-        return {k: clean_nan(v, f"{path}.{k}") for k, v in obj.items()}
-
-    elif isinstance(obj, list):
-        return [clean_nan(v, f"{path}[{i}]") for i, v in enumerate(obj)]
-
-    elif isinstance(obj, np.integer):
-        return int(obj)
-
-    elif isinstance(obj, np.floating):
-        value = float(obj)
-        if math.isnan(value) or math.isinf(value):
-            print(f"NaN found at: {path}")
-            return None
-        return value
-
-    elif isinstance(obj, float):
-        if math.isnan(obj) or math.isinf(obj):
-            print(f"NaN found at: {path}")
-            return None
-        return obj
-
-    elif pd.isna(obj):
-        print(f"NaN found at: {path}")
-        return None
-
-    return obj
-
-def generate_report(df):
-
-    report = {
-        "basic_info": basic_info(df),
-        "column_summary": col_summary(df),
-        "missing_analysis": missing_values(df),
-        "duplicate_analysis": duplicate_values(df),
-        "invalid_value_analysis": invalid_values(df),
-        "numerical_statistics": numerical_statistics(df),
-        "categorical_statistics": categorical_statistics(df),
-        "datetime_statistics": datetime_statistics(df),
-        "outlier_analysis": check_outliers(df),
-        "correlation_analysis": check_correlation(df),
-        "distribution_analysis": distribution_analysis(df),
-        "kurtosis_analysis": kurtosis(df),
-    }
-
-    return clean_nan(report)
-
-
+# ============================================================
+# FASTAPI APP
+# ============================================================
 
 app = FastAPI(
     title="AI ML Workspace API",
-    description="Backend API for AI-Powered ML Workspace",
+    description="Dataset EDA and AI-powered data quality analysis",
     version="1.0.0"
 )
 
-# Allow frontend to access backend
+
+# ============================================================
+# CORS
+# ============================================================
+
 app.add_middleware(
     CORSMiddleware,
+
     allow_origins=[
         "http://localhost:3000",
-        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3000"
     ],
+
     allow_credentials=True,
+
     allow_methods=["*"],
+
     allow_headers=["*"],
 )
 
 
+# ============================================================
+# ROOT
+# ============================================================
 
 @app.get("/")
 def root():
+
     return {
         "status": "success",
         "message": "AI ML Workspace Backend Running 🚀"
     }
 
-# @app.post("/upload")
-# async def upload_csv(file: UploadFile = File(...)):
-#     # Read CSV
-#     df = pd.read_csv(file.file)
 
-#     return {
-#         "filename": file.filename,
-#         "rows": len(df),
-#         "columns": len(df.columns),
-#         "column_names": df.columns.tolist(),
-#         "preview": df.head().to_dict(orient="records")
-#     }
+# ============================================================
+# GENERATE EDA REPORT
+# ============================================================
 
-@app.post("/upload")
-async def upload_csv(file: UploadFile = File(...)):
-    df = pd.read_csv(file.file)
-    print(df.dtypes)
+def generate_report(df):
 
-    preview = (
-        df.head()
-        .replace({np.nan: None})
-        .to_dict(orient="records")
-    )
+    report = {}
 
-    print(preview)
+    # --------------------------------------------------------
+    # Basic information
+    # --------------------------------------------------------
 
-    return {
-        "filename": file.filename,
-        "rows": int(len(df)),
-        "columns": int(len(df.columns)),
-        "column_names": df.columns.tolist(),
-        "preview": preview,
-    }
+    report["basic_info"] = basic_info(df)
 
 
-@app.post("/eda")
-async def eda_endpoint(file: UploadFile = File(...)):
+    # --------------------------------------------------------
+    # Column summary
+    # --------------------------------------------------------
 
-    df = pd.read_csv(file.file)
+    report["column_summary"] = col_summary(df)
 
-    report = generate_report(df)
+
+    # --------------------------------------------------------
+    # Missing values
+    # --------------------------------------------------------
+
+    report["missing_analysis"] = missing_values(df)
+
+
+    # --------------------------------------------------------
+    # Duplicate rows
+    # --------------------------------------------------------
+
+    report["duplicate_analysis"] = duplicate_values(df)
+
+
+    # --------------------------------------------------------
+    # Invalid values
+    # --------------------------------------------------------
+
+    report["invalid_value_analysis"] = invalid_values(df)
+
+
+    # --------------------------------------------------------
+    # Numerical statistics
+    # --------------------------------------------------------
+
+    report["numerical_statistics"] = numerical_statistics(df)
+
+
+    # --------------------------------------------------------
+    # Categorical statistics
+    # --------------------------------------------------------
+
+    report["categorical_statistics"] = categorical_statistics(df)
+
+
+    # --------------------------------------------------------
+    # Datetime statistics
+    # --------------------------------------------------------
+
+    report["datetime_statistics"] = datetime_statistics(df)
+
+
+    # --------------------------------------------------------
+    # Outliers
+    # --------------------------------------------------------
+
+    report["outlier_analysis"] = check_outliers(df)
+
+
+    # --------------------------------------------------------
+    # Correlation
+    # --------------------------------------------------------
+
+    report["correlation_analysis"] = check_correlation(df)
+
+
+    # --------------------------------------------------------
+    # Distribution
+    # --------------------------------------------------------
+
+    report["distribution_analysis"] = distribution_analysis(df)
+
+
+    # --------------------------------------------------------
+    # Kurtosis
+    # --------------------------------------------------------
+
+    report["kurtosis_analysis"] = kurtosis(df)
+
 
     return report
-    
 
+
+# ============================================================
+# UPLOAD DATASET
+# ============================================================
+
+@app.post("/upload")
+async def upload_dataset(
+    file: UploadFile = File(...)
+):
+
+    try:
+
+        # ----------------------------------------------------
+        # Validate file
+        # ----------------------------------------------------
+
+        if not file.filename.lower().endswith(".csv"):
+
+            raise HTTPException(
+                status_code=400,
+                detail="Only CSV files are supported."
+            )
+
+
+        # ----------------------------------------------------
+        # Read CSV
+        # ----------------------------------------------------
+
+        df = pd.read_csv(
+            file.file
+        )
+
+
+        # ----------------------------------------------------
+        # Create preview
+        # ----------------------------------------------------
+
+        preview_df = df.head(10).copy()
+
+        preview_df = preview_df.astype(
+            object
+        )
+
+        preview_df = preview_df.where(
+            pd.notna(preview_df),
+            None
+        )
+
+        preview = preview_df.to_dict(
+            orient="records"
+        )
+
+
+        # ----------------------------------------------------
+        # Return basic information
+        # ----------------------------------------------------
+
+        return {
+
+            "filename":
+                file.filename,
+
+            "rows":
+                len(df),
+
+            "columns":
+                len(df.columns),
+
+            "column_names":
+                df.columns.tolist(),
+
+            "preview":
+                preview
+
+        }
+
+
+    except HTTPException:
+
+        raise
+
+
+    except Exception as e:
+
+        print(
+            f"[Upload] Error: {e}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to read CSV: {str(e)}"
+        )
+
+
+# ============================================================
+# EDA
+# ============================================================
+
+@app.post("/eda")
+async def eda(
+    file: UploadFile = File(...)
+):
+
+    try:
+
+        # ----------------------------------------------------
+        # Validate
+        # ----------------------------------------------------
+
+        if not file.filename.lower().endswith(".csv"):
+
+            raise HTTPException(
+                status_code=400,
+                detail="Only CSV files are supported."
+            )
+
+
+        # ----------------------------------------------------
+        # Read CSV
+        # ----------------------------------------------------
+
+        df = pd.read_csv(
+            file.file
+        )
+
+
+        # ----------------------------------------------------
+        # Generate report
+        # ----------------------------------------------------
+
+        report = generate_report(
+            df
+        )
+
+
+        return report
+
+
+    except HTTPException:
+
+        raise
+
+
+    except Exception as e:
+
+        print(
+            f"[EDA] Error: {e}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"EDA failed: {str(e)}"
+        )
+
+
+# ============================================================
+# AI INSIGHTS
+# ============================================================
 
 @app.post("/ai-insights")
-async def ai_insights(file: UploadFile = File(...)):
+async def ai_insights(
+    file: UploadFile = File(...)
+):
 
-    df = pd.read_csv(file.file)
+    try:
 
-    report = generate_report(df)
+        print(
+            "\n========================================"
+        )
 
-    result = analyze_dataset(report)
+        print(
+            "AI INSIGHTS REQUEST RECEIVED"
+        )
 
-    return result
+        print(
+            "========================================"
+        )
+
+
+        # ----------------------------------------------------
+        # Validate file
+        # ----------------------------------------------------
+
+        if not file.filename.lower().endswith(".csv"):
+
+            raise HTTPException(
+                status_code=400,
+                detail="Only CSV files are supported."
+            )
+
+
+        # ----------------------------------------------------
+        # Read CSV
+        # ----------------------------------------------------
+
+        df = pd.read_csv(
+            file.file
+        )
+
+
+        print(
+            f"Dataset loaded: {file.filename}"
+        )
+
+        print(
+            f"Rows: {len(df)}"
+        )
+
+        print(
+            f"Columns: {len(df.columns)}"
+        )
+
+
+        # ====================================================
+        # STEP 1 — Generate EDA report
+        # ====================================================
+
+        report = generate_report(
+            df
+        )
+
+
+        print(
+            "EDA report generated."
+        )
+
+
+        # ====================================================
+        # STEP 2 — Analyze dataset
+        # ====================================================
+
+        result = analyze_dataset(
+            report
+        )
+
+
+        print(
+            f"Health score: {result['score']}"
+        )
+
+        print(
+            f"Issues detected: "
+            f"{len(result['summary']['issues'])}"
+        )
+
+
+        # ====================================================
+        # STEP 3 — CALL GEMINI
+        # ====================================================
+
+        print(
+            "Sending prompt to Gemini..."
+        )
+
+
+        recommendations = get_ai_recommendations(
+            result["prompt"]
+        )
+
+
+        print(
+            "Gemini request completed."
+        )
+
+
+        # ====================================================
+        # STEP 4 — Add recommendations
+        # ====================================================
+
+        result["recommendations"] = recommendations
+
+
+        # ====================================================
+        # RETURN RESULT
+        # ====================================================
+
+        return result
+
+
+    except HTTPException:
+
+        raise
+
+
+    except Exception as e:
+
+        print(
+            f"AI INSIGHTS ERROR: {e}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+
+# ============================================================
+# DATA CLEANING
+# ============================================================
 
 @app.post("/clean")
 async def clean_dataset(
     file: UploadFile = File(...),
-    operations: str = Form(...)
+    operations: str = Form("")
 ):
-    # Read uploaded CSV
-    df = pd.read_csv(file.file)
 
-    # Convert operations JSON string to Python list
-    operations = json.loads(operations)
+    try:
 
-    # -----------------------
-    # BEFORE CLEANING
-    # -----------------------
+        # ----------------------------------------------------
+        # Validate file
+        # ----------------------------------------------------
 
-    report_before = generate_report(df)
+        if not file.filename.lower().endswith(".csv"):
 
-    summary_before = create_summary(report_before)
+            raise HTTPException(
+                status_code=400,
+                detail="Only CSV files are supported."
+            )
 
-    score_before = calculate_score(summary_before)
 
-    # -----------------------
-    # APPLY CLEANING
-    # -----------------------
+        # ----------------------------------------------------
+        # Read CSV
+        # ----------------------------------------------------
 
-    cleaned_df = apply_cleaning(df, operations)
-
-    # -----------------------
-    # AFTER CLEANING
-    # -----------------------
-
-    report_after = generate_report(cleaned_df)
-
-    summary_after = create_summary(report_after)
-
-    score_after = calculate_score(summary_after)
-
-    # -----------------------
-    # COMPARE
-    # -----------------------
-
-    comparison = compare_reports(
-
-        {
-            "score": score_before,
-            "summary": summary_before
-        },
-
-        {
-            "score": score_after,
-            "summary": summary_after
-        }
-
-    )
-
-    # -----------------------
-    # RETURN
-    # -----------------------
-
-    return {
-
-        "comparison": comparison,
-
-        "before": {
-
-            "score": score_before,
-
-            "summary": summary_before
-
-        },
-
-        "after": {
-
-            "score": score_after,
-
-            "summary": summary_after
-
-        },
-
-        "preview": (
-
-            cleaned_df
-            .head()
-            .replace({np.nan: None})
-            .to_dict(orient="records")
-
+        df = pd.read_csv(
+            file.file
         )
 
-    }
 
-@app.post("/download")
-async def download_cleaned_csv(
-    file: UploadFile = File(...),
-    operations: str = Form(...)
-):
+        # ----------------------------------------------------
+        # Parse operations
+        # ----------------------------------------------------
 
-    # Read CSV
-    df = pd.read_csv(file.file)
+        try:
 
-    # Convert operations
-    operations = json.loads(operations)
+            parsed_operations = json.loads(
+                operations
+            )
 
-    # Apply cleaning
-    cleaned_df = apply_cleaning(df, operations)
+        except json.JSONDecodeError:
 
-    # Convert DataFrame to CSV
-    output = StringIO()
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid cleaning operations JSON."
+            )
 
-    cleaned_df.to_csv(output, index=False)
 
-    output.seek(0)
+        # ----------------------------------------------------
+        # Apply cleaning
+        # ----------------------------------------------------
 
-    return StreamingResponse(
-        output,
-        media_type="text/csv",
-        headers={
-            "Content-Disposition": "attachment; filename=cleaned_dataset.csv"
+        cleaned_df = apply_cleaning(
+            df,
+            parsed_operations
+        )
+
+
+        # ----------------------------------------------------
+        # Return information
+        # ----------------------------------------------------
+
+        return {
+
+            "message":
+                "Dataset cleaned successfully.",
+
+            "original_rows":
+                len(df),
+
+            "cleaned_rows":
+                len(cleaned_df),
+
+            "original_columns":
+                len(df.columns),
+
+            "cleaned_columns":
+                len(cleaned_df.columns),
+
+            "columns":
+                cleaned_df.columns.tolist()
+
         }
-    )
 
 
-   
+    except HTTPException:
+
+        raise
+
+
+    except Exception as e:
+
+        print(
+            f"[Cleaning] Error: {e}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Cleaning failed: {str(e)}"
+        )
+

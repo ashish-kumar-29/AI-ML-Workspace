@@ -1,62 +1,89 @@
+
 import pandas as pd
 
 
 def apply_cleaning(df, operations):
-    """
-    operations example:
 
-    [
-        {
-            "column": "Age",
-            "method": "median"
-        },
-        {
-            "column": "Cabin",
-            "method": "drop_column"
-        }
-    ]
-    """
+    df = df.copy()
 
-    cleaned_df = df.copy()
+    for operation in operations:
 
-    for op in operations:
+        column = operation.get("column")
+        method = operation.get("method")
 
-        column = op.get("column")
-        method = op.get("method")
-
-        if column not in cleaned_df.columns:
+        if column not in df.columns:
             continue
 
-        # Missing Value Handling
+
+        # ====================================================
+        # MEAN
+        # ====================================================
 
         if method == "mean":
 
-            cleaned_df[column] = cleaned_df[column].fillna(
-                cleaned_df[column].mean()
-            )
+            if pd.api.types.is_numeric_dtype(
+                df[column]
+            ):
+
+                mean_value = df[column].mean()
+
+                df[column] = df[column].fillna(
+                    mean_value
+                )
+
+
+        # ====================================================
+        # MEDIAN
+        # ====================================================
 
         elif method == "median":
 
-            cleaned_df[column] = cleaned_df[column].fillna(
-                cleaned_df[column].median()
-            )
+            if pd.api.types.is_numeric_dtype(
+                df[column]
+            ):
+
+                median_value = df[column].median()
+
+                df[column] = df[column].fillna(
+                    median_value
+                )
+
+
+        # ====================================================
+        # MODE
+        # ====================================================
 
         elif method == "mode":
 
-            cleaned_df[column] = cleaned_df[column].fillna(
-                cleaned_df[column].mode()[0]
-            )
+            mode = df[column].mode()
 
-        # Drop Entire Column
+            if not mode.empty:
+
+                df[column] = df[column].fillna(
+                    mode.iloc[0]
+                )
+
+
+        # ====================================================
+        # DROP COLUMN
+        # ====================================================
 
         elif method == "drop_column":
 
-            cleaned_df.drop(columns=[column], inplace=True)
+            df = df.drop(
+                columns=[column]
+            )
 
-        # Drop Rows
+
+        # ====================================================
+        # DROP ROWS
+        # ====================================================
 
         elif method == "drop_rows":
 
-            cleaned_df = cleaned_df.dropna(subset=[column])
+            df = df.dropna(
+                subset=[column]
+            )
 
-    return cleaned_df
+
+    return df

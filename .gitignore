@@ -9,6 +9,9 @@ backend/__pycache__/
 
 # Environment
 .env
+*.env
+__pycache__/
+*.pyc
 
 # Python
 venv/

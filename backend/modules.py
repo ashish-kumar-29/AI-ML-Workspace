@@ -1,3 +1,4 @@
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -7,6 +8,7 @@ from pandas.api.types import (
     is_bool_dtype,
     is_string_dtype,
 )
+
 
 def safe_number(value):
     if value is None:
@@ -43,7 +45,7 @@ def col_summary(df):
         memory = int(df[col].memory_usage(deep =True))
         unique = int(df[col].nunique())
         missing = int(df[col].isnull().sum())
-        missing_p = round((missing/len(df) *100),2)
+        missing_p = round((missing/len(df) *100),2) if len(df) > 0 else 0
         not_null = len(df) - missing
         if(unique ==1):
             is_constant =True
@@ -65,6 +67,7 @@ def col_summary(df):
 
 
 
+
 #missing values
 
 def missing_values(df):
@@ -72,7 +75,7 @@ def missing_values(df):
 
     for col in df.columns:
         count = int(df[col].isnull().sum())
-        percent = round((count / len(df))*100, 2)
+        percent = round((count / len(df))*100, 2) if len(df) > 0 else 0
 
         result[col] = {
             "missing_count": count,
@@ -85,13 +88,13 @@ def missing_values(df):
 
 
 #duplicate values
+
 def duplicate_values(df):
     count = int(df.duplicated().sum())
-    percent = round(count/len(df)*100 ,2)
+    percent = round(count/len(df)*100 ,2) if len(df) > 0 else 0
     return {
         "duplicate_count":count, 
         "duplicate_percent":percent}
-
 
 
 
@@ -109,16 +112,17 @@ def check_outliers(df):
         iqr = q3-q1
 
         l_bound = q1 - 1.5*iqr
-        u_bound = q3+ 1.5*iqr
+        u_bound = q3 + 1.5*iqr
         count = 0
+
         for value in df[col]:
             if(value<l_bound or value>u_bound):
                 count+=1
 
         result[col] = {
-            "outliers_count" : count,
-            "lower_bound": round(float(l_bound), 2),
-            "upper_bound": round(float(u_bound), 2)
+            "outliers_count" : int(count),
+            "lower_bound": safe_number(l_bound),
+            "upper_bound": safe_number(u_bound)
         }
     return result
 
@@ -147,6 +151,8 @@ def check_correlation(df):
 
 
 
+
+
 # def basic_info(df):
 #     return{
 #         "rows": len(df),
@@ -164,7 +170,7 @@ def basic_info(df):
     info["memory_usage_mb"] = round(info["memory_usage_bytes"] / (1024 * 1024), 2)
 
     info["numeric_columns"] = len(df.select_dtypes(include="number").columns)
-    info["categorical_columns"] = len(df.select_dtypes(include="object").columns)
+    info["categorical_columns"] = len(df.select_dtypes(include=["object", "category"]).columns)
     info["datetime_columns"] = len(df.select_dtypes(include="datetime").columns)
     info["boolean_columns"] = len(df.select_dtypes(include="bool").columns)
 
@@ -180,20 +186,27 @@ def describe(df):
 
 
 
+
 def invalid_values(df):
     result = {}
     invalid_str = [""," ", "NA","N/A", "NULL", "null", "Null", "None", "none", "?","NA", "N/A", "n/a", "na","NaN", "nan", "NAN", "Nil", "nil","Undefined"]
 
     for col in df.columns:
         count = 0
+
         if(df[col].dtype == "object"):
+
             for v in df[col]:
+
                 if not pd.isna(v):
-                    if(v.strip() in invalid_str):
-                        count+=1
+
+                    if isinstance(v, str):
+
+                        if(v.strip() in invalid_str):
+                            count+=1
 
         if is_numeric_dtype(df[col]):
-            count += np.isinf(df[col]).sum()
+            count += int(np.isinf(df[col]).sum())
 
         result[col] = {"invalid_count":int(count)}
 
@@ -212,10 +225,12 @@ def numerical_statistics(df):
         mean = df[col].mean()
         median = df[col].median()
         mode = df[col].mode()
+
         if len(mode) == df[col].nunique():
             mode = "No mode"
         else:
-            mode = mode.tolist()            
+            mode = mode.tolist()
+
         sumv = df[col].sum()
         minv = df[col].min()
         maxv = df[col].max()
@@ -225,7 +240,9 @@ def numerical_statistics(df):
         q1 = df[col].quantile(0.25)
         q2 = df[col].quantile(0.50)
         q3 = df[col].quantile(0.75)
-        iqr = q3 -q1
+
+        # Correct IQR = Q3 - Q1
+        iqr = q3 - q1
 
         # result[col] = {
         #     "count":int(cnt),
@@ -274,14 +291,29 @@ def categorical_statistics(df):
     
     for col in cat_col:
         mode = df[col].mode()
+
         if len(mode) > 0:
             top_category = mode[0]
         else:
             top_category = None
-        if len(df[col]) > 0:
-            top_freq= int(df[col].value_counts().iloc[0])
+
+        value_counts = df[col].value_counts()
+
+        if len(value_counts) > 0:
+            top_freq= int(value_counts.iloc[0])
         else:
             top_freq=  0
+
+        lengths = df[col].dropna().astype(str).str.len()
+
+        if len(lengths) > 0:
+            average_length = round(float(lengths.mean()),2)
+            minimum_length = int(lengths.min())
+            maximum_length = int(lengths.max())
+        else:
+            average_length = 0
+            minimum_length = 0
+            maximum_length = 0
 
         
         result[col] = {
@@ -289,18 +321,21 @@ def categorical_statistics(df):
             "unique_values":int(df[col].nunique()),
             "top_category":top_category,
             "top_frequency":top_freq,
-            "average_length":round(float(df[col].astype(str).str.len().mean()),2),
-            "minimum_length":int(df[col].astype(str).str.len().min()),
-            "maximum_length":int(df[col].astype(str).str.len().max())
+            "average_length":average_length,
+            "minimum_length":minimum_length,
+            "maximum_length":maximum_length
                 
         }
+
     return result
+
 
 
 
 def datetime_statistics(df):
     result={}
     date_col = df.select_dtypes(include = "datetime").columns
+
     for col in date_col:
         result[col]={
             "first_date":str(df[col].min()),
@@ -308,6 +343,7 @@ def datetime_statistics(df):
             "unique_date":int(df[col].nunique()),
             "missing_value":int(df[col].isnull().sum()),
         }
+
     return result
 
 
@@ -316,14 +352,21 @@ def datetime_statistics(df):
 def distribution_analysis(df):
     result = {}
     num_col = df.select_dtypes(include = "number").columns
+
     for col in num_col:
         skew = df[col].skew()
         count = (df[col]==0).sum()
         neg_count = (df[col]<0).sum()
-        if(skew>0.5):
+
+        if(pd.isna(skew)):
+            distribution = "Undefined"
+
+        elif(skew>0.5):
             distribution = 'Right Skewed'
+
         elif (skew<-0.5):
             distribution = 'Left Skewed'
+
         else:
             distribution = "Symmetric"
 
@@ -344,15 +387,23 @@ def distribution_analysis(df):
 def kurtosis(df):
     result ={}
     num_col=df.select_dtypes(include = "number").columns
+
     for col in num_col:
     
         kurt = df[col].kurt()
-        if(kurt>0):
+
+        if(pd.isna(kurt)):
+            ans = "Undefined"
+
+        elif(kurt>0):
             ans= "Leptokurtic"
+
         elif(kurt<0):
             ans ="Platykurtic"
+
         else:
             ans = "Mesokurtic"
+
         result[col] = {
             # "kurtosis": round(float(kurt), 2),
             "kurtosis": safe_number(kurt),

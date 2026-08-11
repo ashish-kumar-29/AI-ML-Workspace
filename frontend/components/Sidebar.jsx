@@ -1,3 +1,4 @@
+
 "use client";
 
 export default function Sidebar({ active, setActive }) {
@@ -18,6 +19,8 @@ export default function Sidebar({ active, setActive }) {
     { id: "distribution", label: "Distribution Analysis", icon: "📉" },
     { id: "kurtosis", label: "Kurtosis Analysis", icon: "📐" },
     { id: "outlier", label: "Outlier Analysis", icon: "📦" },
+
+    { id: "cleaning", label: "Data Cleaning", icon: "🧹" },
 
     { id: "ai", label: "AI Insights", icon: "🤖" },
   ];
@@ -55,3 +58,4 @@ export default function Sidebar({ active, setActive }) {
     </aside>
   );
 }
+
