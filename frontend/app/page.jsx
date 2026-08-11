@@ -269,7 +269,7 @@ bg-[size:50px_50px]
 
         >
 
-          AI ML Workspace is an intelligent data analysis platform
+          DataMind AI is an intelligent data analysis platform
           designed to simplify the machine learning workflow.
           Upload your datasets, automatically perform exploratory
           data analysis, visualize important patterns, identify
