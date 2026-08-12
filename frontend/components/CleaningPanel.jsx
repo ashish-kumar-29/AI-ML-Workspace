@@ -10,7 +10,13 @@ export default function CleaningPanel({
 }) {
   const [operations, setOperations] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedMethods, setSelectedMethods] = useState({});
+
+  // Stores the cleaned CSV returned by backend
+  const [cleanedFile, setCleanedFile] = useState(null);
+
+  // Stores cleaning statistics
+  const [cleaningResult, setCleaningResult] = useState(null);
+
 
   // ============================================================
   // CHECK NUMERICAL COLUMN
@@ -26,19 +32,23 @@ export default function CleaningPanel({
     );
   };
 
+
   // ============================================================
   // GET AVAILABLE CLEANING METHODS
   // ============================================================
 
   const getMethods = (problem, column) => {
-    // ==========================================================
+
+    // ----------------------------------------------------------
     // MISSING VALUES
-    // ==========================================================
+    // ----------------------------------------------------------
 
     if (problem === "Missing Values") {
+
       const methods = [];
 
       if (isNumericalColumn(column)) {
+
         methods.push({
           value: "mean",
           label: "Fill with Mean",
@@ -68,11 +78,13 @@ export default function CleaningPanel({
       return methods;
     }
 
-    // ==========================================================
+
+    // ----------------------------------------------------------
     // OUTLIERS
-    // ==========================================================
+    // ----------------------------------------------------------
 
     if (problem === "Outliers") {
+
       return [
         {
           value: "remove_outliers",
@@ -86,11 +98,13 @@ export default function CleaningPanel({
       ];
     }
 
-    // ==========================================================
+
+    // ----------------------------------------------------------
     // INVALID VALUES
-    // ==========================================================
+    // ----------------------------------------------------------
 
     if (problem === "Invalid Values") {
+
       return [
         {
           value: "replace_with_mode",
@@ -109,11 +123,13 @@ export default function CleaningPanel({
       ];
     }
 
-    // ==========================================================
+
+    // ----------------------------------------------------------
     // DUPLICATE ROWS
-    // ==========================================================
+    // ----------------------------------------------------------
 
     if (problem === "Duplicate Rows") {
+
       return [
         {
           value: "drop_duplicates",
@@ -122,28 +138,38 @@ export default function CleaningPanel({
       ];
     }
 
+
     return [];
   };
+
 
   // ============================================================
   // BUILD ISSUES FROM EDA
   // ============================================================
 
   const buildIssues = () => {
+
     const issues = [];
 
-    // ==========================================================
+
+    // ----------------------------------------------------------
     // MISSING VALUES
-    // ==========================================================
+    // ----------------------------------------------------------
 
     const missingAnalysis =
       eda?.missing_analysis || {};
 
-    Object.entries(missingAnalysis).forEach(
+    Object.entries(
+      missingAnalysis
+    ).forEach(
       ([column, info]) => {
-        if (info?.missing_count > 0) {
+
+        if (
+          info?.missing_count > 0
+        ) {
+
           issues.push({
-            column: column,
+            column,
             problem: "Missing Values",
             count: info.missing_count,
             percent: info.missing_percent,
@@ -155,9 +181,10 @@ export default function CleaningPanel({
       }
     );
 
-    // ==========================================================
+
+    // ----------------------------------------------------------
     // DUPLICATE ROWS
-    // ==========================================================
+    // ----------------------------------------------------------
 
     const duplicateAnalysis =
       eda?.duplicate_analysis || {};
@@ -165,6 +192,7 @@ export default function CleaningPanel({
     if (
       duplicateAnalysis?.duplicate_count > 0
     ) {
+
       issues.push({
         column: "Dataset",
         problem: "Duplicate Rows",
@@ -172,26 +200,35 @@ export default function CleaningPanel({
           duplicateAnalysis.duplicate_count,
         percent:
           duplicateAnalysis.duplicate_percent,
-        severity: getSeverity(
-          duplicateAnalysis.duplicate_percent
-        ),
+        severity:
+          getSeverity(
+            duplicateAnalysis.duplicate_percent
+          ),
       });
     }
 
-    // ==========================================================
+
+    // ----------------------------------------------------------
     // OUTLIERS
-    // ==========================================================
+    // ----------------------------------------------------------
 
     const outlierAnalysis =
       eda?.outlier_analysis || {};
 
-    Object.entries(outlierAnalysis).forEach(
+    Object.entries(
+      outlierAnalysis
+    ).forEach(
       ([column, info]) => {
-        if (info?.outliers_count > 0) {
+
+        if (
+          info?.outliers_count > 0
+        ) {
+
           issues.push({
-            column: column,
+            column,
             problem: "Outliers",
-            count: info.outliers_count,
+            count:
+              info.outliers_count,
             percent: 0,
             severity: "Medium",
           });
@@ -199,20 +236,28 @@ export default function CleaningPanel({
       }
     );
 
-    // ==========================================================
+
+    // ----------------------------------------------------------
     // INVALID VALUES
-    // ==========================================================
+    // ----------------------------------------------------------
 
     const invalidAnalysis =
       eda?.invalid_value_analysis || {};
 
-    Object.entries(invalidAnalysis).forEach(
+    Object.entries(
+      invalidAnalysis
+    ).forEach(
       ([column, info]) => {
-        if (info?.invalid_count > 0) {
+
+        if (
+          info?.invalid_count > 0
+        ) {
+
           issues.push({
-            column: column,
+            column,
             problem: "Invalid Values",
-            count: info.invalid_count,
+            count:
+              info.invalid_count,
             percent: 0,
             severity: "Low",
           });
@@ -220,14 +265,17 @@ export default function CleaningPanel({
       }
     );
 
+
     return issues;
   };
+
 
   // ============================================================
   // SEVERITY
   // ============================================================
 
   const getSeverity = (percent) => {
+
     if (percent >= 70) {
       return "Critical";
     }
@@ -247,20 +295,21 @@ export default function CleaningPanel({
     return "None";
   };
 
+
   // ============================================================
-  // FIND GEMINI RECOMMENDATION
+  // FIND AI RECOMMENDATION
   // ============================================================
 
   const getAIRecommendation = (issue) => {
-    if (!Array.isArray(aiRecommendations)) {
+
+    if (
+      !Array.isArray(aiRecommendations)
+    ) {
       return null;
     }
 
     return aiRecommendations.find(
       (recommendation) => {
-        // ------------------------------------------------------
-        // COLUMN MUST MATCH
-        // ------------------------------------------------------
 
         if (
           recommendation?.column !==
@@ -272,16 +321,16 @@ export default function CleaningPanel({
         const recommendationProblem =
           String(
             recommendation?.problem || ""
-          ).toLowerCase();
+          )
+            .trim()
+            .toLowerCase();
 
         const issueProblem =
           String(
             issue?.problem || ""
-          ).toLowerCase();
-
-        // ------------------------------------------------------
-        // NORMAL MATCH
-        // ------------------------------------------------------
+          )
+            .trim()
+            .toLowerCase();
 
         if (
           recommendationProblem ===
@@ -289,16 +338,6 @@ export default function CleaningPanel({
         ) {
           return true;
         }
-
-        // ------------------------------------------------------
-        // HANDLE:
-        //
-        // Gemini:
-        // "SibSp Outliers"
-        //
-        // EDA:
-        // "Outliers"
-        // ------------------------------------------------------
 
         if (
           issue.problem === "Outliers" &&
@@ -314,92 +353,79 @@ export default function CleaningPanel({
     );
   };
 
+
   // ============================================================
-  // GET CURRENT SELECTED METHOD
+  // GET SELECTED METHOD
   // ============================================================
 
   const getSelectedMethod = (
     index,
     issue
   ) => {
+
+    const selected =
+      operations.find(
+        (operation) =>
+          operation.issueIndex === index
+      );
+
+    if (selected) {
+      return selected.method;
+    }
+
     const aiRecommendation =
       getAIRecommendation(issue);
 
-    // User's manually selected method
-    // has priority.
-
-    if (
-      selectedMethods[index]
-    ) {
-      return selectedMethods[index];
-    }
-
-    // Otherwise use Gemini recommendation
-    // as the default selected method.
-
     return (
-      aiRecommendation
-        ?.recommended_method || ""
+      aiRecommendation?.recommended_method ||
+      ""
     );
   };
 
-  // ============================================================
-  // SELECT METHOD
-  // ============================================================
-
-  const selectMethod = (
-    index,
-    method
-  ) => {
-    setSelectedMethods(
-      (previous) => ({
-        ...previous,
-        [index]: method,
-      })
-    );
-  };
 
   // ============================================================
-  // USE GEMINI RECOMMENDATION
-  //
-  // IMPORTANT:
-  // THIS DOES NOT CALL GEMINI.
-  //
-  // It only uses the recommendation that was
-  // already returned by /ai-insights.
+  // USE AI RECOMMENDATION
   // ============================================================
 
-  function useAIRecommendation(index, issue) {
-
-  const recommendation =
-    getAIRecommendation(issue);
-
-  if (!recommendation?.recommended_method) {
-    alert("Gemini recommendation is not available.");
-    return;
-  }
-
-  setSelectedMethods((prev) => ({
-    ...prev,
-    [index]: recommendation.recommended_method,
-  }));
-}
-
-  // ============================================================
-  // ADD OPERATION
-  // ============================================================
-
-  const addOperation = (
+  const handleAIRecommendation = (
     index,
     issue
   ) => {
-    const method =
-      getSelectedMethod(
-        index,
-        issue
+
+    const recommendation =
+      getAIRecommendation(issue);
+
+    if (
+      !recommendation?.recommended_method
+    ) {
+
+      alert(
+        "AI recommendation is not available."
       );
 
+      return;
+    }
+
+    addOrUpdateOperation(
+      index,
+      issue,
+      recommendation.recommended_method
+    );
+  };
+
+
+  // ============================================================
+  // ADD / UPDATE OPERATION
+  // ============================================================
+
+  const addOrUpdateOperation = (
+    index,
+    issue,
+    method
+  ) => {
+
     if (!method) {
+
       alert(
         "Please select a cleaning method."
       );
@@ -407,47 +433,79 @@ export default function CleaningPanel({
       return;
     }
 
-    // ----------------------------------------------------------
-    // PREVENT DUPLICATE OPERATION
-    // ----------------------------------------------------------
 
-    const alreadyExists =
-      operations.some(
-        (operation) =>
-          operation.column ===
-            issue.column &&
-          operation.problem ===
-            issue.problem
+    const availableMethods =
+      getMethods(
+        issue.problem,
+        issue.column
       );
 
-    if (alreadyExists) {
+    const validMethod =
+      availableMethods.some(
+        (item) =>
+          item.value === method
+      );
+
+    if (!validMethod) {
+
       alert(
-        "A cleaning operation for this issue is already selected."
+        "Selected cleaning method is not valid for this issue."
       );
 
       return;
     }
 
-    // ----------------------------------------------------------
-    // ADD OPERATION
-    // ----------------------------------------------------------
 
     setOperations(
-      (previous) => [
-        ...previous,
+      (previous) => {
 
-        {
+        const existingIndex =
+          previous.findIndex(
+            (operation) =>
+              operation.issueIndex ===
+              index
+          );
+
+
+        const newOperation = {
+
+          issueIndex:
+            index,
+
           column:
             issue.column,
 
           problem:
             issue.problem,
 
-          method: method,
-        },
-      ]
+          method:
+            method,
+        };
+
+
+        if (
+          existingIndex === -1
+        ) {
+
+          return [
+            ...previous,
+            newOperation,
+          ];
+        }
+
+
+        const updated =
+          [...previous];
+
+        updated[
+          existingIndex
+        ] = newOperation;
+
+        return updated;
+      }
     );
   };
+
 
   // ============================================================
   // REMOVE OPERATION
@@ -456,6 +514,7 @@ export default function CleaningPanel({
   const removeOperation = (
     operationIndex
   ) => {
+
     setOperations(
       (previous) =>
         previous.filter(
@@ -466,12 +525,15 @@ export default function CleaningPanel({
     );
   };
 
+
   // ============================================================
   // CLEAN DATASET
   // ============================================================
 
   const handleClean = async () => {
+
     if (!file) {
+
       alert(
         "Please upload a CSV dataset first."
       );
@@ -479,9 +541,11 @@ export default function CleaningPanel({
       return;
     }
 
+
     if (
       operations.length === 0
     ) {
+
       alert(
         "Select at least one cleaning operation."
       );
@@ -489,23 +553,46 @@ export default function CleaningPanel({
       return;
     }
 
+
     const formData =
       new FormData();
+
 
     formData.append(
       "file",
       file
     );
 
+
+    // Remove frontend-only issueIndex
+    // before sending operations.
+
+    const backendOperations =
+      operations.map(
+        ({
+          issueIndex,
+          ...operation
+        }) => operation
+      );
+
+
     formData.append(
       "operations",
       JSON.stringify(
-        operations
+        backendOperations
       )
     );
 
+
     try {
+
       setLoading(true);
+
+      // Clear previous download
+      setCleanedFile(null);
+
+      setCleaningResult(null);
+
 
       console.log(
         "Sending cleaning request..."
@@ -513,8 +600,9 @@ export default function CleaningPanel({
 
       console.log(
         "Operations:",
-        operations
+        backendOperations
       );
+
 
       // ========================================================
       // CALL BACKEND
@@ -529,72 +617,254 @@ export default function CleaningPanel({
           }
         );
 
+
       // ========================================================
       // HANDLE ERROR
       // ========================================================
 
       if (!response.ok) {
+
         let message =
           "Cleaning failed.";
 
+
         try {
+
           const errorData =
             await response.json();
 
           message =
             errorData?.detail ||
             message;
+
         } catch {
+
           // Response was not JSON
+
         }
+
 
         throw new Error(
           message
         );
       }
 
+
       // ========================================================
-      // READ RESPONSE
+      // GET CLEANED CSV BLOB
       // ========================================================
 
-      const data =
-        await response.json();
+      const blob =
+        await response.blob();
+
+
+      // ========================================================
+      // STORE CLEANED FILE
+      // ========================================================
+
+      setCleanedFile(
+        blob
+      );
+
+
+      // ========================================================
+      // READ STATISTICS FROM HEADERS
+      // ========================================================
+
+      const originalRows =
+        Number(
+          response.headers.get(
+            "X-Original-Rows"
+          )
+        );
+
+      const cleanedRows =
+        Number(
+          response.headers.get(
+            "X-Cleaned-Rows"
+          )
+        );
+
+      const originalColumns =
+        Number(
+          response.headers.get(
+            "X-Original-Columns"
+          )
+        );
+
+      const cleanedColumns =
+        Number(
+          response.headers.get(
+            "X-Cleaned-Columns"
+          )
+        );
+
+
+      const contentDisposition =
+        response.headers.get(
+          "Content-Disposition"
+        );
+
+
+      // ========================================================
+      // GET DOWNLOAD FILENAME
+      // ========================================================
+
+      let filename =
+        "cleaned_dataset.csv";
+
+
+      if (
+        contentDisposition
+      ) {
+
+        const match =
+          contentDisposition.match(
+            /filename="?([^"]+)"?/
+          );
+
+
+        if (match?.[1]) {
+
+          filename =
+            match[1];
+
+        }
+      }
+
+
+      // ========================================================
+      // STORE RESULT
+      // ========================================================
+
+      const result = {
+
+        message:
+          "Dataset cleaned successfully.",
+
+        original_rows:
+          originalRows,
+
+        cleaned_rows:
+          cleanedRows,
+
+        original_columns:
+          originalColumns,
+
+        cleaned_columns:
+          cleanedColumns,
+
+        filename:
+          filename,
+      };
+
+
+      setCleaningResult(
+        result
+      );
+
 
       console.log(
-        "Cleaning Response:",
-        data
+        "Cleaning completed:",
+        result
       );
+
 
       // ========================================================
       // SEND RESULT TO PAGE
       // ========================================================
 
       if (onCleaned) {
-        onCleaned(data);
+
+        onCleaned(
+          result
+        );
       }
 
+
     } catch (error) {
+
       console.error(
         "Cleaning failed:",
         error
       );
+
 
       alert(
         error?.message ||
         "Cleaning failed."
       );
 
+
     } finally {
+
       setLoading(false);
     }
   };
+
+
+  // ============================================================
+  // DOWNLOAD CLEANED DATASET
+  // ============================================================
+
+  const handleDownload = () => {
+
+    if (!cleanedFile) {
+
+      alert(
+        "No cleaned dataset is available."
+      );
+
+      return;
+    }
+
+
+    const url =
+      window.URL.createObjectURL(
+        cleanedFile
+      );
+
+
+    const link =
+      document.createElement(
+        "a"
+      );
+
+
+    link.href =
+      url;
+
+
+    link.download =
+      cleaningResult?.filename ||
+      "cleaned_dataset.csv";
+
+
+    document.body.appendChild(
+      link
+    );
+
+
+    link.click();
+
+
+    link.remove();
+
+
+    window.URL.revokeObjectURL(
+      url
+    );
+  };
+
 
   // ============================================================
   // NO EDA
   // ============================================================
 
   if (!eda) {
+
     return (
+
       <div className="mt-10 bg-white rounded-2xl shadow-xl p-8">
 
         <h2 className="text-3xl font-bold text-blue-600 mb-6">
@@ -610,19 +880,23 @@ export default function CleaningPanel({
     );
   }
 
+
   // ============================================================
-  // BUILD ALL EDA ISSUES
+  // BUILD ISSUES
   // ============================================================
 
   const issues =
     buildIssues();
+
 
   // ============================================================
   // UI
   // ============================================================
 
   return (
+
     <div className="mt-10 bg-white rounded-2xl shadow-xl p-8">
+
 
       {/* ======================================================
           HEADER
@@ -632,16 +906,50 @@ export default function CleaningPanel({
         Data Cleaning
       </h2>
 
+
       <p className="text-gray-600 mb-8">
         Review the issues detected by EDA and choose how you
         want to clean them.
       </p>
+
+
+      {/* ======================================================
+          AI STATUS
+      ====================================================== */}
+
+      {Array.isArray(aiRecommendations) &&
+        aiRecommendations.length > 0 && (
+
+        <div className="mb-8 bg-blue-50 border border-blue-200 rounded-xl p-5">
+
+          <div className="flex items-center gap-2">
+
+            <span className="text-xl">
+              🤖
+            </span>
+
+            <h3 className="font-bold text-blue-800">
+              AI Recommendations Available
+            </h3>
+
+          </div>
+
+          <p className="text-sm text-blue-700 mt-2">
+            AI recommendations are highlighted for each
+            detected issue. You can accept the recommendation
+            or choose another available cleaning method.
+          </p>
+
+        </div>
+      )}
+
 
       {/* ======================================================
           NO ISSUES
       ====================================================== */}
 
       {issues.length === 0 && (
+
         <div className="bg-green-50 border border-green-300 rounded-xl p-5">
 
           <p className="font-semibold text-green-700">
@@ -651,8 +959,9 @@ export default function CleaningPanel({
         </div>
       )}
 
+
       {/* ======================================================
-          ALL DETECTED ISSUES
+          ISSUES
       ====================================================== */}
 
       <div className="space-y-6">
@@ -666,10 +975,12 @@ export default function CleaningPanel({
                 issue.column
               );
 
+
             const aiRecommendation =
               getAIRecommendation(
                 issue
               );
+
 
             const selectedMethod =
               getSelectedMethod(
@@ -677,9 +988,13 @@ export default function CleaningPanel({
                 issue
               );
 
+
             return (
+
               <div
-                key={`${issue.column}-${issue.problem}-${index}`}
+                key={
+                  `${issue.column}-${issue.problem}-${index}`
+                }
                 className="border rounded-xl p-5"
               >
 
@@ -701,11 +1016,13 @@ export default function CleaningPanel({
 
                   </div>
 
+
                   <span className="px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-700">
                     {issue.severity}
                   </span>
 
                 </div>
+
 
                 {/* =================================================
                     ISSUE COUNT
@@ -719,8 +1036,11 @@ export default function CleaningPanel({
                     {issue.count}
                   </span>
 
+
                   {issue.percent > 0 && (
+
                     <>
+
                       <span className="mx-2">
                         |
                       </span>
@@ -730,56 +1050,80 @@ export default function CleaningPanel({
                       <span className="font-semibold ml-1">
                         {issue.percent}%
                       </span>
+
                     </>
                   )}
 
                 </div>
 
+
                 {/* =================================================
-                    GEMINI RECOMMENDATION
+                    AI RECOMMENDATION
                 ================================================= */}
 
                 {aiRecommendation && (
-                  <div className="mt-5 bg-blue-50 border border-blue-300 rounded-xl p-5">
 
-                    <div className="flex items-center justify-between">
+                  <div className="mt-5 bg-blue-50 border-2 border-blue-300 rounded-xl p-5">
 
-                      <h4 className="font-bold text-blue-700">
-                        🤖 Gemini Recommendation
+                    <div className="flex items-center justify-between gap-4">
+
+                      <h4 className="font-bold text-blue-800 flex items-center gap-2">
+
+                        <span>
+                          🤖
+                        </span>
+
+                        AI Recommended Method
+
                       </h4>
 
-                      <span className="text-sm font-semibold text-blue-600">
+
+                      <span className="text-sm font-bold text-blue-700 bg-white px-3 py-1 rounded-full border border-blue-200">
+
                         {
                           aiRecommendation
                             .recommended_method
                         }
+
                       </span>
 
                     </div>
 
-                    <p className="mt-3 text-gray-800 font-semibold">
-                      {
-                        aiRecommendation
-                          .Recommendation
-                      }
-                    </p>
 
-                    <p className="mt-2 text-gray-600">
+                    {aiRecommendation.Recommendation && (
 
-                      <span className="font-semibold">
-                        Reason:
-                      </span>
+                      <p className="mt-3 text-gray-800 font-semibold">
 
-                      {" "}
+                        {
+                          aiRecommendation
+                            .Recommendation
+                        }
 
-                      {
-                        aiRecommendation
-                          .Reason
-                      }
+                      </p>
+                    )}
 
-                    </p>
+
+                    {aiRecommendation.Reason && (
+
+                      <p className="mt-2 text-gray-600">
+
+                        <span className="font-semibold">
+                          Reason:
+                        </span>
+
+                        {" "}
+
+                        {
+                          aiRecommendation
+                            .Reason
+                        }
+
+                      </p>
+                    )}
+
 
                     {aiRecommendation.Alternative && (
+
                       <p className="mt-2 text-gray-600">
 
                         <span className="font-semibold">
@@ -796,50 +1140,45 @@ export default function CleaningPanel({
                       </p>
                     )}
 
-                    {/* =================================================
-                        USE GEMINI BUTTON
-                    ================================================= */}
 
-                   <button
-  onClick={() => {
-    const recommendation = getAIRecommendation(issue);
-
-    if (!recommendation?.recommended_method) {
-      alert("Gemini recommendation is not available.");
-      return;
-    }
-
-    setSelectedMethods((prev) => ({
-      ...prev,
-      [index]: recommendation.recommended_method,
-    }));
-  }}
-  className="mt-4 bg-blue-600 text-white px-5 py-2 rounded-lg"
->
-  Use Gemini Recommendation
-</button>
+                    <button
+                      onClick={() =>
+                        handleAIRecommendation(
+                          index,
+                          issue
+                        )
+                        
+                      }
+                      className="mt-4 bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition"
+                    >
+                      Use AI Recommendation
+                    </button>
 
                   </div>
                 )}
+
 
                 {/* =================================================
                     AVAILABLE METHODS
                 ================================================= */}
 
                 {methods.length > 0 && (
+
                   <div className="mt-5">
 
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Choose Cleaning Method
                     </label>
 
+
                     <select
                       value={
                         selectedMethod
                       }
                       onChange={(event) =>
-                        selectMethod(
+                        addOrUpdateOperation(
                           index,
+                          issue,
                           event.target.value
                         )
                       }
@@ -850,8 +1189,10 @@ export default function CleaningPanel({
                         Select cleaning method
                       </option>
 
+
                       {methods.map(
                         (method) => (
+
                           <option
                             key={
                               method.value
@@ -860,36 +1201,38 @@ export default function CleaningPanel({
                               method.value
                             }
                           >
+
                             {method.label}
 
                             {
                               aiRecommendation
                                 ?.recommended_method ===
                               method.value
-                                ? " — Gemini Recommended"
+                                ? " — AI Recommended"
                                 : ""
                             }
+
                           </option>
                         )
                       )}
 
                     </select>
 
+
                     {/* =================================================
-                        ADD OPERATION
+                        OPERATION STATUS
                     ================================================= */}
 
-                    <button
-                      onClick={() =>
-                        addOperation(
-                          index,
-                          issue
-                        )
-                      }
-                      className="mt-3 bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition"
-                    >
-                      Add Cleaning Operation
-                    </button>
+                    {selectedMethod && (
+
+                      <p className="mt-2 text-sm text-green-700">
+                        Selected:{" "}
+                        <span className="font-semibold">
+                          {selectedMethod}
+                        </span>
+                      </p>
+
+                    )}
 
                   </div>
                 )}
@@ -901,19 +1244,23 @@ export default function CleaningPanel({
 
       </div>
 
+
       {/* ======================================================
           SELECTED OPERATIONS
       ====================================================== */}
 
       {operations.length > 0 && (
+
         <div className="mt-8">
 
           <h3 className="text-xl font-bold text-gray-800 mb-4">
             Selected Operations
           </h3>
 
+
           {operations.map(
             (operation, index) => (
+
               <div
                 key={index}
                 className="bg-gray-100 p-4 rounded-lg mb-3 flex justify-between items-center"
@@ -943,6 +1290,7 @@ export default function CleaningPanel({
 
                 </div>
 
+
                 <button
                   onClick={() =>
                     removeOperation(
@@ -961,6 +1309,7 @@ export default function CleaningPanel({
         </div>
       )}
 
+
       {/* ======================================================
           APPLY CLEANING
       ====================================================== */}
@@ -973,10 +1322,122 @@ export default function CleaningPanel({
         }
         className="mt-6 bg-green-600 text-white px-6 py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-700 transition"
       >
+
         {loading
           ? "Cleaning..."
           : "Apply Cleaning"}
+
       </button>
+
+
+      {/* ======================================================
+          CLEANING RESULT
+      ====================================================== */}
+
+      {cleaningResult && (
+
+        <div className="mt-8 bg-green-50 border border-green-300 rounded-xl p-6">
+
+          <h3 className="text-xl font-bold text-green-700">
+            Cleaning Completed Successfully
+          </h3>
+
+
+          <p className="text-gray-700 mt-2">
+            Dataset cleaned successfully.
+          </p>
+
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
+
+
+            {/* ORIGINAL ROWS */}
+
+            <div className="bg-white rounded-lg p-4 border">
+
+              <p className="text-sm text-gray-500">
+                Original Rows
+              </p>
+
+              <p className="text-xl font-bold">
+                {cleaningResult.original_rows}
+              </p>
+
+            </div>
+
+
+            {/* CLEANED ROWS */}
+
+            <div className="bg-white rounded-lg p-4 border">
+
+              <p className="text-sm text-gray-500">
+                Cleaned Rows
+              </p>
+
+              <p className="text-xl font-bold">
+                {cleaningResult.cleaned_rows}
+              </p>
+
+            </div>
+
+
+            {/* ORIGINAL COLUMNS */}
+
+            <div className="bg-white rounded-lg p-4 border">
+
+              <p className="text-sm text-gray-500">
+                Original Columns
+              </p>
+
+              <p className="text-xl font-bold">
+                {cleaningResult.original_columns}
+              </p>
+
+            </div>
+
+
+            {/* CLEANED COLUMNS */}
+
+            <div className="bg-white rounded-lg p-4 border">
+
+              <p className="text-sm text-gray-500">
+                Cleaned Columns
+              </p>
+
+              <p className="text-xl font-bold">
+                {cleaningResult.cleaned_columns}
+              </p>
+
+            </div>
+
+          </div>
+
+
+          {/* ====================================================
+              DOWNLOAD
+          ==================================================== */}
+
+          <button
+            onClick={
+              handleDownload
+            }
+            disabled={
+              !cleanedFile
+            }
+            className="mt-6 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+
+            ⬇ Download Cleaned Dataset
+
+          </button>
+
+
+          <p className="text-sm text-gray-500 mt-2">
+            Your cleaned dataset will be downloaded as a CSV file.
+          </p>
+
+        </div>
+      )}
 
     </div>
   );

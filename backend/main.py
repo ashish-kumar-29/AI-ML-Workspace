@@ -41,7 +41,7 @@ from services.cleaning_service import apply_cleaning
 # ============================================================
 
 app = FastAPI(
-    title="AI ML Workspace API",
+    title="DataMind AI API",
     description="Dataset EDA and AI-powered data quality analysis",
     version="1.0.0"
 )
@@ -84,7 +84,7 @@ def root():
 
     return {
         "status": "success",
-        "message": "AI ML Workspace Backend Running 🚀"
+        "message": "DataMind AI Backend Running 🚀"
     }
 
 

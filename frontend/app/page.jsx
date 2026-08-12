@@ -1,738 +1,409 @@
 "use client";
 
-import { useState } from "react";
 
-import FileUpload from "@/components/FileUpload";
-import DatasetDetails from "@/components/DatasetInfo";
-import PreviewTable from "@/components/PreviewTable";
-import ColumnSummary from "@/components/ColumnSummary";
-import MissingValues from "@/components/MissingValues";
-import NumericalStatistics from "@/components/NumericalStatistics";
-import CategoricalStatistics from "@/components/CategoricalStatistics";
-import DuplicateAnalysis from "@/components/DuplicateAnalysis";
-import InvalidValues from "@/components/InvalidValues";
-import CorrelationAnalysis from "@/components/CorrelationAnalysis";
-import OutlierAnalysis from "@/components/OutlierAnalysis";
-import DistributionAnalysis from "@/components/DistributionAnalysis";
-import KurtosisAnalysis from "@/components/KurtosisAnalysis";
-import AIInsights from "@/components/AIInsights";
-import CleaningPanel from "@/components/CleaningPanel";
+import { useRouter } from "next/navigation";
+import FeatureCards from "@/components/FeatureCards";
+import { motion } from "framer-motion";
 
-import Sidebar from "@/components/Sidebar";
-
-
-export default function Home() {
-
-  // ============================================================
-  // DATASET
-  // ============================================================
-
-  const [dataset, setDataset] = useState(null);
-
-  const [eda, setEda] = useState(null);
-
-  // Keep original uploaded file
-  // so Gemini and cleaning can be called later.
-  const [uploadedFile, setUploadedFile] = useState(null);
-
-
-  // ============================================================
-  // AI
-  // ============================================================
-
-  const [aiInsights, setAiInsights] = useState(null);
-
-  const [aiLoading, setAiLoading] = useState(false);
-
-  const [aiError, setAiError] = useState(null);
-
-  const aiRecommendations =
-  aiInsights?.recommendations || [];
-
-
-  // ============================================================
-  // CLEANING
-  // ============================================================
-
-  const [cleaningResult, setCleaningResult] = useState(null);
-
-
-  // ============================================================
-  // SIDEBAR
-  // ============================================================
-
-  const [active, setActive] = useState("info");
-
-
-  // ============================================================
-  // AI GENERATION
-  // ============================================================
-
-  const generateAI = async () => {
-
-    // Prevent duplicate requests
-    if (aiLoading) {
-      return;
-    }
-
-
-    if (!uploadedFile) {
-
-      setAiError(
-        "Please upload a CSV dataset first."
-      );
-
-      return;
-    }
-
-
-    try {
-
-      setAiLoading(true);
-
-      setAiError(null);
-
-
-      // --------------------------------------------------------
-      // Create multipart request
-      // --------------------------------------------------------
-
-      const formData =
-        new FormData();
-
-      formData.append(
-        "file",
-        uploadedFile
-      );
-
-
-      // --------------------------------------------------------
-      // Call Gemini backend
-      // --------------------------------------------------------
-
-      const response =
-        await fetch(
-          "http://127.0.0.1:8000/ai-insights",
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
-
-
-      // --------------------------------------------------------
-      // Handle HTTP errors
-      // --------------------------------------------------------
-
-      if (!response.ok) {
-
-        let message =
-          "Unable to generate AI insights.";
-
-
-        try {
-
-          const errorData =
-            await response.json();
-
-
-          message =
-            errorData?.detail ||
-            errorData?.message ||
-            message;
-
-
-        } catch {
-
-          // Response was not JSON
-
-        }
-
-
-        throw new Error(
-          message
-        );
-
-      }
-
-
-      // --------------------------------------------------------
-      // Parse result
-      // --------------------------------------------------------
-
-      const result =
-        await response.json();
-
-
-      console.log(
-        "AI Insights:",
-        result
-      );
-
-
-      setAiInsights(
-        result
-      );
-
-
-    } catch (error) {
-
-      console.error(
-        "AI generation failed:",
-        error
-      );
-
-
-      setAiError(
-        error?.message ||
-        "Failed to generate AI insights."
-      );
-
-
-    } finally {
-
-      setAiLoading(false);
-
-    }
-
-  };
-
-
-  // ============================================================
-  // FILE SELECTED
-  // ============================================================
-
-  const handleFileSelected = (
-    file
-  ) => {
-
-    setUploadedFile(
-      file
-    );
-
-
-    // Clear old AI result
-
-    setAiInsights(
-      null
-    );
-
-
-    setAiError(
-      null
-    );
-
-
-    // Clear old cleaning result
-
-    setCleaningResult(
-      null
-    );
-
-  };
-
-
-  // ============================================================
-  // UPLOAD SUCCESS
-  // ============================================================
-
-  const handleUploadSuccess = (
-    data
-  ) => {
-
-    console.log(
-      "Upload successful:",
-      data
-    );
-
-
-    setDataset(
-      data
-    );
-
-  };
-
-
-  // ============================================================
-  // EDA SUCCESS
-  // ============================================================
-
-  const handleEDASuccess = (
-    data
-  ) => {
-
-    console.log(
-      "EDA successful:",
-      data
-    );
-
-
-    setEda(
-      data
-    );
-
-  };
-
-
-  // ============================================================
-  // CLEANING SUCCESS
-  // ============================================================
-
-  const handleCleaned = (
-    data
-  ) => {
-
-    console.log(
-      "Cleaning successful:",
-      data
-    );
-
-
-    setCleaningResult(
-      data
-    );
-
-  };
-
-
-  // ============================================================
-  // RENDER
-  // ============================================================
+export default function LandingPage() {
+  const router = useRouter();
 
   return (
+    <main
+      className="
+        relative
+        overflow-hidden
+        min-h-screen
+        flex
+        items-center
+        justify-center
+        bg-gradient-to-br
+        from-slate-950
+        via-blue-950
+        to-black
+        px-6
+      "
+    >
+      {/* AI Grid Background */}
 
-    <main className="min-h-screen bg-gray-100 flex">
-
-
-      {/* ======================================================
-          SIDEBAR
-      ====================================================== */}
-
-      <Sidebar
-        active={active}
-        setActive={setActive}
+      <div
+        className="
+          absolute
+          inset-0
+          opacity-20
+          bg-[linear-gradient(#38bdf8_1px,transparent_1px),linear-gradient(90deg,#38bdf8_1px,transparent_1px)]
+          bg-[size:50px_50px]
+        "
       />
 
-
-      {/* ======================================================
-          MAIN
-      ====================================================== */}
-
-      <div className="flex-1 ml-72 p-8">
-
-        <div className="bg-white shadow-xl rounded-2xl p-10 w-full min-h-screen">
-
-
-          {/* ==================================================
-              UPLOAD PAGE
-          ================================================== */}
-
-          {!dataset ? (
-
-            <>
-
-              <h1 className="text-5xl font-bold text-blue-600">
-                AI ML Workspace
-              </h1>
-
-
-              <p className="text-gray-600 mt-4 text-lg">
-                Analyze your datasets with AI-powered insights
-              </p>
-
-
-              <div className="mt-10 border-2 border-dashed border-blue-400 rounded-xl p-12">
-
-                <div className="text-6xl">
-                  📂
-                </div>
-
-
-                <h2 className="text-3xl font-bold text-gray-800 mt-4">
-                  Upload Dataset
-                </h2>
-
-
-                <p className="text-gray-600 mt-2">
-                  Upload a CSV file to start analysis.
-                </p>
-
-
-                <FileUpload
-                  onUploadSuccess={
-                    handleUploadSuccess
-                  }
-
-                  onEDASuccess={
-                    handleEDASuccess
-                  }
-
-                  onFileSelected={
-                    handleFileSelected
-                  }
-                />
-
-              </div>
-
-            </>
-
-          ) : (
-
-            /* =================================================
-               DATASET LOADED
-            ================================================= */
-
-            <>
-
-              <div className="flex justify-between items-center border-b pb-5 mb-8">
-
-
-                <div>
-
-                  <h1 className="text-4xl font-bold text-blue-600">
-                    AI ML Workspace
-                  </h1>
-
-
-                  <p className="text-gray-600 mt-2">
-
-                    Dataset:
-
-                    <span className="font-semibold ml-1">
-                      {dataset.filename}
-                    </span>
-
-                  </p>
-
-                </div>
-
-
-                <FileUpload
-                  onUploadSuccess={
-                    handleUploadSuccess
-                  }
-
-                  onEDASuccess={
-                    handleEDASuccess
-                  }
-
-                  onFileSelected={
-                    handleFileSelected
-                  }
-                />
-
-              </div>
-
-
-              {/* =================================================
-                 INFO
-              ================================================= */}
-
-              {active === "info" && (
-
-                <DatasetDetails
-                  data={dataset}
-                />
-
-              )}
-
-
-              {/* =================================================
-                 PREVIEW
-              ================================================= */}
-
-              {active === "preview" && (
-
-                <PreviewTable
-                  data={dataset}
-                />
-
-              )}
-
-
-              {/* =================================================
-                 COLUMN SUMMARY
-              ================================================= */}
-
-              {active === "column" && eda && (
-
-                <ColumnSummary
-                  data={
-                    eda.column_summary
-                  }
-                />
-
-              )}
-
-
-              {/* =================================================
-                 MISSING
-              ================================================= */}
-
-              {active === "missing" && eda && (
-
-                <MissingValues
-                  data={
-                    eda.missing_analysis
-                  }
-
-                />
-
-              )}
-
-
-              {/* =================================================
-                 DUPLICATES
-              ================================================= */}
-
-              {active === "duplicate" && eda && (
-
-                <DuplicateAnalysis
-                  data={
-                    eda.duplicate_analysis
-                  }
-
-                />
-
-              )}
-
-
-              {/* =================================================
-                 INVALID
-              ================================================= */}
-
-              {active === "invalid" && eda && (
-
-                <InvalidValues
-                  data={
-                    eda.invalid_value_analysis
-                  }
-
-                />
-
-              )}
-
-
-              {/* =================================================
-                 NUMERICAL
-              ================================================= */}
-
-              {active === "numerical" && eda && (
-
-                <NumericalStatistics
-                  data={
-                    eda.numerical_statistics
-                  }
-
-                />
-
-              )}
-
-
-              {/* =================================================
-                 CATEGORICAL
-              ================================================= */}
-
-              {active === "categorical" && eda && (
-
-                <CategoricalStatistics
-                  data={
-                    eda.categorical_statistics
-                  }
-
-                />
-
-              )}
-
-
-              {/* =================================================
-                 CORRELATION
-              ================================================= */}
-
-              {active === "correlation" && eda && (
-
-                <CorrelationAnalysis
-                  data={
-                    eda.correlation_analysis
-                  }
-
-                />
-
-              )}
-
-
-              {/* =================================================
-                 DISTRIBUTION
-              ================================================= */}
-
-              {active === "distribution" && eda && (
-
-                <DistributionAnalysis
-                  data={
-                    eda.distribution_analysis
-                  }
-
-                />
-
-              )}
-
-
-              {/* =================================================
-                 KURTOSIS
-              ================================================= */}
-
-              {active === "kurtosis" && eda && (
-
-                <KurtosisAnalysis
-                  data={
-                    eda.kurtosis_analysis
-                  }
-
-                />
-
-              )}
-
-
-              {/* =================================================
-                 OUTLIER
-              ================================================= */}
-
-              {active === "outlier" && eda && (
-
-                <OutlierAnalysis
-                  data={
-                    eda.outlier_analysis
-                  }
-
-                />
-
-              )}
-
-
-              {/* =================================================
-                 DATA CLEANING
-              ================================================= */}
-
-              {active === "cleaning" && (
-
-                <>
-
-                 <CleaningPanel
-  file={uploadedFile}
-  eda={eda}
-  aiRecommendations={aiRecommendations}
-  onCleaned={handleCleaned}
-/>
-
-
-                  {cleaningResult && (
-
-                    <div className="mt-6 bg-green-50 border border-green-300 rounded-xl p-6">
-
-                      <h3 className="text-xl font-bold text-green-700">
-                        Cleaning Completed Successfully
-                      </h3>
-
-
-                      <p className="text-gray-700 mt-2">
-                        {cleaningResult.message}
-                      </p>
-
-
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
-
-                        <div className="bg-white rounded-lg p-4 border">
-                          <p className="text-sm text-gray-500">
-                            Original Rows
-                          </p>
-
-                          <p className="text-xl font-bold">
-                            {cleaningResult.original_rows}
-                          </p>
-                        </div>
-
-
-                        <div className="bg-white rounded-lg p-4 border">
-                          <p className="text-sm text-gray-500">
-                            Cleaned Rows
-                          </p>
-
-                          <p className="text-xl font-bold">
-                            {cleaningResult.cleaned_rows}
-                          </p>
-                        </div>
-
-
-                        <div className="bg-white rounded-lg p-4 border">
-                          <p className="text-sm text-gray-500">
-                            Original Columns
-                          </p>
-
-                          <p className="text-xl font-bold">
-                            {cleaningResult.original_columns}
-                          </p>
-                        </div>
-
-
-                        <div className="bg-white rounded-lg p-4 border">
-                          <p className="text-sm text-gray-500">
-                            Cleaned Columns
-                          </p>
-
-                          <p className="text-xl font-bold">
-                            {cleaningResult.cleaned_columns}
-                          </p>
-                        </div>
-
-                      </div>
-
-                    </div>
-
-                  )}
-
-                </>
-
-              )}
-
-
-              {/* =================================================
-                 AI INSIGHTS
-              ================================================= */}
-
-              {active === "ai" && (
-
-                <AIInsights
-
-                  data={
-                    aiInsights
-                  }
-
-                  loading={
-                    aiLoading
-                  }
-
-                  error={
-                    aiError
-                  }
-
-                  onGenerate={
-                    generateAI
-                  }
-
-                />
-
-              )}
-
-            </>
-
-          )}
-
-        </div>
+      {/* Animated Glow Background */}
+
+      <div className="absolute inset-0">
+
+        <motion.div
+          animate={{
+            x: [0, 80, 0],
+            y: [0, 50, 0],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="
+            absolute
+            top-10
+            left-10
+            w-96
+            h-96
+            bg-green-400/20
+            rounded-full
+            blur-3xl
+          "
+        />
+
+        <motion.div
+          animate={{
+            x: [0, -100, 0],
+            y: [0, 80, 0],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="
+            absolute
+            bottom-10
+            right-10
+            w-[450px]
+            h-[450px]
+            bg-blue-500/20
+            rounded-full
+            blur-3xl
+          "
+        />
+
+        <motion.div
+          animate={{
+            scale: [1, 1.3, 1],
+          }}
+          transition={{
+            duration: 6,
+            repeat: Infinity,
+          }}
+          className="
+            absolute
+            top-1/2
+            left-1/3
+            w-72
+            h-72
+            bg-purple-500/20
+            rounded-full
+            blur-3xl
+          "
+        />
 
       </div>
 
+      <motion.div
+        initial={{
+          opacity: 0,
+          y: 50,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+        }}
+        transition={{
+          duration: 2.5,
+        }}
+        className="
+          relative
+          z-10
+          max-w-5xl
+          text-center
+          text-white
+        "
+      >
+
+        {/* Logo */}
+
+        <motion.div
+          initial={{
+            scale: 0,
+            opacity: 0,
+          }}
+          animate={{
+            scale: 1,
+            opacity: 1,
+          }}
+          transition={{
+            duration: 2,
+          }}
+          className="
+            text-7xl
+            mb-8
+          "
+        >
+          🤖
+        </motion.div>
+
+        {/* Heading */}
+
+        <motion.h1
+          initial={{
+            scale: 0.3,
+            opacity: 0,
+          }}
+          animate={{
+            scale: 1,
+            opacity: 1,
+          }}
+          transition={{
+            duration: 2.6,
+            ease: "easeOut",
+          }}
+          className="
+            text-6xl
+            md:text-7xl
+            font-extrabold
+            leading-tight
+          "
+        >
+          DataMind
+
+          <span className="text-cyan-400">
+            {" "}AI
+          </span>
+        </motion.h1>
+
+        {/* First Description */}
+
+        <motion.p
+          initial={{
+            x: -150,
+            opacity: 0,
+          }}
+          animate={{
+            x: 0,
+            opacity: 1,
+          }}
+          transition={{
+            duration: 1.9,
+            delay: 2.3,
+          }}
+          className="
+            mt-6
+            text-xl
+            md:text-2xl
+            text-gray-200
+            max-w-4xl
+            mx-auto
+            leading-relaxed
+          "
+        >
+          DataMind AI is an intelligent data analysis platform
+          designed to simplify the machine learning workflow.
+          Upload your datasets, automatically perform exploratory
+          data analysis, visualize important patterns, identify
+          data quality issues, and receive AI-powered recommendations
+          for preprocessing and machine learning models.
+        </motion.p>
+
+        {/* Second Description */}
+
+        <motion.p
+          initial={{
+            x: 150,
+            opacity: 0,
+          }}
+          animate={{
+            x: 0,
+            opacity: 1,
+          }}
+          transition={{
+            duration: 1.9,
+            delay: 2.5,
+          }}
+          className="
+            mt-5
+            text-lg
+            text-green-200
+          "
+        >
+          Transform raw data into meaningful insights with the power
+          of Artificial Intelligence and Machine Learning.
+        </motion.p>
+
+        {/* Features */}
+
+        <div
+          className="
+            grid
+            md:grid-cols-3
+            gap-6
+            mt-12
+          "
+        >
+
+          {[
+            {
+              icon: "📊",
+              title: "Smart EDA",
+              text: "Automatically understand your dataset.",
+            },
+            {
+              icon: "🤖",
+              title: "AI Assistant",
+              text: "Ask questions about your data.",
+            },
+            {
+              icon: "📈",
+              title: "ML Insights",
+              text: "Get recommendations for models.",
+            },
+          ].map((item, index) => (
+
+            <motion.div
+              key={index}
+              initial={{
+                opacity: 0,
+                y: 50,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              transition={{
+                delay: 3 + index * 0.5,
+              }}
+              className="
+                bg-white/40
+                backdrop-blur-lg
+                border
+                bg-cyan-400/20
+                rounded-3xl
+                p-6
+                shadow-[0_0_35px_rgba(34,211,238,0.6)]
+              "
+            >
+
+              <h3
+                className="
+                  text-xl
+                  font-bold
+                  text-white
+                "
+              >
+                {item.icon} {item.title}
+              </h3>
+
+              <p
+                className="
+                  mt-2
+                  text-gray-300
+                "
+              >
+                {item.text}
+              </p>
+
+            </motion.div>
+
+          ))}
+
+        </div>
+
+        <FeatureCards />
+
+        {/* Get Started Button */}
+
+        <motion.button
+          initial={{
+            opacity: 0,
+            x: -300,
+          }}
+          animate={{
+            opacity: 1,
+            x: 0,
+          }}
+          transition={{
+            duration: 2,
+            delay: 4.5,
+            ease: "easeOut",
+          }}
+          whileHover={{
+            scale: 1.08,
+          }}
+          whileTap={{
+            scale: 0.95,
+          }}
+
+          // IMPORTANT:
+          // Existing workspace is now /workspace
+          onClick={() => router.push("/workspace")}
+
+          className="
+            relative
+            overflow-hidden
+            mt-14
+            px-12
+            py-4
+            rounded-full
+            bg-cyan-400
+            text-black
+            text-xl
+            font-bold
+            shadow-[0_0_35px_rgba(34,197,94,0.6)]
+          "
+        >
+
+          <motion.span
+            animate={{
+              x: ["-150%", "150%"],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+            className="
+              absolute
+              inset-0
+              bg-gradient-to-r
+              from-transparent
+              via-white/50
+              to-transparent
+            "
+          />
+
+          <span className="relative">
+            🚀 Get Started
+          </span>
+
+        </motion.button>
+
+        <motion.p
+          initial={{
+            opacity: 0,
+          }}
+          animate={{
+            opacity: 1,
+          }}
+          transition={{
+            delay: 3.3,
+          }}
+          className="
+            mt-8
+            text-green-200
+            text-sm
+          "
+        >
+          Powered by CodeAlchaemy
+        </motion.p>
+
+      </motion.div>
+
     </main>
-
   );
-
 }
