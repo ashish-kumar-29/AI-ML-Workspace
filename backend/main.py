@@ -1,9 +1,17 @@
-
+import io
 import json
 import pandas as pd
 
+from fastapi import (
+    FastAPI,
+    UploadFile,
+    File,
+    HTTPException,
+    Form
+)
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Form
+from fastapi.responses import StreamingResponse
+
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -24,7 +32,7 @@ from modules import (
 
 
 from services.ai_service import analyze_dataset
-from services.gemini_service import get_ai_recommendations
+from services.grok_service import get_ai_recommendations
 from services.cleaning_service import apply_cleaning
 
 
@@ -56,6 +64,14 @@ app.add_middleware(
     allow_methods=["*"],
 
     allow_headers=["*"],
+
+    expose_headers=[
+        "Content-Disposition",
+        "X-Original-Rows",
+        "X-Cleaned-Rows",
+        "X-Original-Columns",
+        "X-Cleaned-Columns"
+    ]
 )
 
 
@@ -79,6 +95,7 @@ def root():
 def generate_report(df):
 
     report = {}
+
 
     # --------------------------------------------------------
     # Basic information
@@ -178,10 +195,6 @@ async def upload_dataset(
 
     try:
 
-        # ----------------------------------------------------
-        # Validate file
-        # ----------------------------------------------------
-
         if not file.filename.lower().endswith(".csv"):
 
             raise HTTPException(
@@ -220,7 +233,7 @@ async def upload_dataset(
 
 
         # ----------------------------------------------------
-        # Return basic information
+        # Return information
         # ----------------------------------------------------
 
         return {
@@ -270,10 +283,6 @@ async def eda(
 ):
 
     try:
-
-        # ----------------------------------------------------
-        # Validate
-        # ----------------------------------------------------
 
         if not file.filename.lower().endswith(".csv"):
 
@@ -413,11 +422,11 @@ async def ai_insights(
 
 
         # ====================================================
-        # STEP 3 — CALL GEMINI
+        # STEP 3 — CALL GROQ
         # ====================================================
 
         print(
-            "Sending prompt to Gemini..."
+            "Sending prompt to Groq..."
         )
 
 
@@ -427,15 +436,17 @@ async def ai_insights(
 
 
         print(
-            "Gemini request completed."
+            "Groq request completed."
         )
 
 
         # ====================================================
-        # STEP 4 — Add recommendations
+        # STEP 4 — ADD RECOMMENDATIONS
         # ====================================================
 
-        result["recommendations"] = recommendations
+        result["recommendations"] = (
+            recommendations
+        )
 
 
         # ====================================================
@@ -474,9 +485,22 @@ async def clean_dataset(
 
     try:
 
-        # ----------------------------------------------------
-        # Validate file
-        # ----------------------------------------------------
+        print(
+            "\n========================================"
+        )
+
+        print(
+            "CLEANING REQUEST RECEIVED"
+        )
+
+        print(
+            "========================================"
+        )
+
+
+        # ====================================================
+        # VALIDATE FILE
+        # ====================================================
 
         if not file.filename.lower().endswith(".csv"):
 
@@ -486,18 +510,31 @@ async def clean_dataset(
             )
 
 
-        # ----------------------------------------------------
-        # Read CSV
-        # ----------------------------------------------------
+        # ====================================================
+        # READ ORIGINAL CSV
+        # ====================================================
 
         df = pd.read_csv(
             file.file
         )
 
 
-        # ----------------------------------------------------
-        # Parse operations
-        # ----------------------------------------------------
+        print(
+            f"Dataset: {file.filename}"
+        )
+
+        print(
+            f"Original rows: {len(df)}"
+        )
+
+        print(
+            f"Original columns: {len(df.columns)}"
+        )
+
+
+        # ====================================================
+        # PARSE OPERATIONS
+        # ====================================================
 
         try:
 
@@ -513,9 +550,41 @@ async def clean_dataset(
             )
 
 
-        # ----------------------------------------------------
-        # Apply cleaning
-        # ----------------------------------------------------
+        # ====================================================
+        # VALIDATE OPERATIONS
+        # ====================================================
+
+        if not isinstance(
+            parsed_operations,
+            list
+        ):
+
+            raise HTTPException(
+                status_code=400,
+                detail="Cleaning operations must be a list."
+            )
+
+
+        if len(parsed_operations) == 0:
+
+            raise HTTPException(
+                status_code=400,
+                detail="No cleaning operations were provided."
+            )
+
+
+        print(
+            "Cleaning operations:"
+        )
+
+        print(
+            parsed_operations
+        )
+
+
+        # ====================================================
+        # APPLY CLEANING
+        # ====================================================
 
         cleaned_df = apply_cleaning(
             df,
@@ -523,31 +592,112 @@ async def clean_dataset(
         )
 
 
-        # ----------------------------------------------------
-        # Return information
-        # ----------------------------------------------------
+        # ====================================================
+        # CLEANING STATISTICS
+        # ====================================================
 
-        return {
+        original_rows = len(
+            df
+        )
 
-            "message":
-                "Dataset cleaned successfully.",
+        cleaned_rows = len(
+            cleaned_df
+        )
 
-            "original_rows":
-                len(df),
+        original_columns = len(
+            df.columns
+        )
 
-            "cleaned_rows":
-                len(cleaned_df),
+        cleaned_columns = len(
+            cleaned_df.columns
+        )
 
-            "original_columns":
-                len(df.columns),
 
-            "cleaned_columns":
-                len(cleaned_df.columns),
+        print(
+            f"Cleaned rows: {cleaned_rows}"
+        )
 
-            "columns":
-                cleaned_df.columns.tolist()
+        print(
+            f"Cleaned columns: {cleaned_columns}"
+        )
 
-        }
+
+        # ====================================================
+        # CONVERT CLEANED DATAFRAME TO CSV
+        # ====================================================
+
+        csv_buffer = io.StringIO()
+
+
+        cleaned_df.to_csv(
+            csv_buffer,
+            index=False
+        )
+
+
+        csv_buffer.seek(0)
+
+
+        # ====================================================
+        # DOWNLOAD FILENAME
+        # ====================================================
+
+        original_name = (
+            file.filename
+            or "dataset.csv"
+        )
+
+
+        if original_name.lower().endswith(
+            ".csv"
+        ):
+
+            base_name = original_name[
+                :-4
+            ]
+
+        else:
+
+            base_name = original_name
+
+
+        download_filename = (
+            f"{base_name}_cleaned.csv"
+        )
+
+
+        # ====================================================
+        # RETURN CLEANED CSV
+        # ====================================================
+
+        return StreamingResponse(
+
+            iter([
+                csv_buffer.getvalue()
+            ]),
+
+            media_type="text/csv",
+
+            headers={
+
+                "Content-Disposition":
+                    f'attachment; filename="{download_filename}"',
+
+                "X-Original-Rows":
+                    str(original_rows),
+
+                "X-Cleaned-Rows":
+                    str(cleaned_rows),
+
+                "X-Original-Columns":
+                    str(original_columns),
+
+                "X-Cleaned-Columns":
+                    str(cleaned_columns)
+
+            }
+
+        )
 
 
     except HTTPException:
@@ -565,4 +715,3 @@ async def clean_dataset(
             status_code=500,
             detail=f"Cleaning failed: {str(e)}"
         )
-

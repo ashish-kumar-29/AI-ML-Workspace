@@ -1,4 +1,4 @@
-from services.gemini_service import get_ai_recommendations
+from backend.services.grok_service import get_ai_recommendations
 
 prompt = """
 Say hello in JSON.
