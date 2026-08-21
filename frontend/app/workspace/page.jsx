@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import FileUpload from "@/components/FileUpload";
 import DatasetDetails from "@/components/DatasetInfo";
@@ -20,8 +20,164 @@ import CleaningPanel from "@/components/CleaningPanel";
 
 import Sidebar from "@/components/Sidebar";
 
+const WORKSPACE_STORAGE_KEY = "datamind_workspace_state";
+const WORKSPACE_FILE_DB = "datamind_workspace_db";
+const WORKSPACE_FILE_STORE = "files";
+const WORKSPACE_FILE_KEY = "active_dataset_file";
+
+function openWorkspaceFileDB() {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined" || !window.indexedDB) {
+      resolve(null);
+      return;
+    }
+
+    const request = window.indexedDB.open(WORKSPACE_FILE_DB, 1);
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+
+      if (!db.objectStoreNames.contains(WORKSPACE_FILE_STORE)) {
+        db.createObjectStore(WORKSPACE_FILE_STORE);
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function saveWorkspaceFile(file) {
+  const db = await openWorkspaceFileDB();
+
+  if (!db || !file) return;
+
+  await new Promise((resolve, reject) => {
+    const transaction = db.transaction(
+      WORKSPACE_FILE_STORE,
+      "readwrite"
+    );
+
+    transaction.objectStore(WORKSPACE_FILE_STORE).put(
+      file,
+      WORKSPACE_FILE_KEY
+    );
+
+    transaction.oncomplete = resolve;
+    transaction.onerror = () => reject(transaction.error);
+  });
+
+  db.close();
+}
+
+async function restoreWorkspaceFile() {
+  const db = await openWorkspaceFileDB();
+
+  if (!db) return null;
+
+  const file = await new Promise((resolve, reject) => {
+    const transaction = db.transaction(
+      WORKSPACE_FILE_STORE,
+      "readonly"
+    );
+
+    const request = transaction
+      .objectStore(WORKSPACE_FILE_STORE)
+      .get(WORKSPACE_FILE_KEY);
+
+    request.onsuccess = () => resolve(request.result || null);
+    request.onerror = () => reject(request.error);
+  });
+
+  db.close();
+  return file;
+}
+
+async function clearWorkspaceFile() {
+  const db = await openWorkspaceFileDB();
+
+  if (!db) return;
+
+  await new Promise((resolve, reject) => {
+    const transaction = db.transaction(
+      WORKSPACE_FILE_STORE,
+      "readwrite"
+    );
+
+    transaction.objectStore(WORKSPACE_FILE_STORE).delete(
+      WORKSPACE_FILE_KEY
+    );
+
+    transaction.oncomplete = resolve;
+    transaction.onerror = () => reject(transaction.error);
+  });
+
+  db.close();
+}
+
 
 export default function Home() {
+
+  // ============================================================
+  // RESTORE WORKSPACE STATE
+  // ============================================================
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function restoreWorkspace() {
+      try {
+        const saved = sessionStorage.getItem(
+          WORKSPACE_STORAGE_KEY
+        );
+
+        if (saved) {
+          const state = JSON.parse(saved);
+
+          if (!cancelled && state?.dataset) {
+            setDataset(state.dataset);
+          }
+
+          if (!cancelled && state?.eda) {
+            setEda(state.eda);
+          }
+
+          if (!cancelled && state?.aiInsights) {
+            setAiInsights(state.aiInsights);
+          }
+
+          if (!cancelled && state?.cleaningResult) {
+            setCleaningResult(state.cleaningResult);
+          }
+
+          if (!cancelled && state?.active) {
+            setActive(state.active);
+          }
+        }
+
+        // IMPORTANT:
+        // sessionStorage cannot persist a browser File object.
+        // Restore the original CSV from IndexedDB so existing
+        // AI/Cleaning APIs can continue receiving the File.
+        const savedFile = await restoreWorkspaceFile();
+
+        if (!cancelled && savedFile) {
+          setUploadedFile(savedFile);
+        }
+      } catch (error) {
+        console.error(
+          "Failed to restore workspace state:",
+          error
+        );
+      }
+    }
+
+    restoreWorkspace();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // ============================================================
   // DATASET
@@ -32,7 +188,7 @@ export default function Home() {
   const [eda, setEda] = useState(null);
 
   // Keep original uploaded file
-  // so Gemini/Groq and cleaning can be called later.
+  // for AI insights and cleaning.
   const [uploadedFile, setUploadedFile] = useState(null);
 
 
@@ -49,14 +205,6 @@ export default function Home() {
 
   // ============================================================
   // AI RECOMMENDATIONS
-  //
-  // Backend returns:
-  //
-  // aiInsights
-  //   └── recommendations
-  //         └── recommendations: [...]
-  //
-  // CleaningPanel needs the actual array.
   // ============================================================
 
   const aiRecommendations =
@@ -78,16 +226,50 @@ export default function Home() {
 
 
   // ============================================================
+  // PERSIST WORKSPACE STATE
+  // ============================================================
+
+  useEffect(() => {
+    // Do not persist an empty workspace.
+    if (!dataset) {
+      return;
+    }
+
+    try {
+      sessionStorage.setItem(
+        WORKSPACE_STORAGE_KEY,
+        JSON.stringify({
+          dataset,
+          eda,
+          aiInsights,
+          cleaningResult,
+          active,
+        })
+      );
+    } catch (error) {
+      console.error(
+        "Failed to save workspace state:",
+        error
+      );
+    }
+  }, [
+    dataset,
+    eda,
+    aiInsights,
+    cleaningResult,
+    active,
+  ]);
+
+
+  // ============================================================
   // AI GENERATION
   // ============================================================
 
   const generateAI = async () => {
 
-    // Prevent duplicate requests
     if (aiLoading) {
       return;
     }
-
 
     if (!uploadedFile) {
 
@@ -98,99 +280,60 @@ export default function Home() {
       return;
     }
 
-
     try {
 
       setAiLoading(true);
 
       setAiError(null);
 
-
-      // --------------------------------------------------------
-      // Create multipart request
-      // --------------------------------------------------------
-
-      const formData =
-        new FormData();
+      const formData = new FormData();
 
       formData.append(
         "file",
         uploadedFile
       );
 
-
-      // --------------------------------------------------------
-      // Call backend AI endpoint
-      // --------------------------------------------------------
-
-      const response =
-        await fetch(
-          "http://127.0.0.1:8000/ai-insights",
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
-
-
-      // --------------------------------------------------------
-      // Handle HTTP errors
-      // --------------------------------------------------------
+      const response = await fetch(
+        "http://127.0.0.1:8000/ai-insights",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
 
         let message =
           "Unable to generate AI insights.";
 
-
         try {
 
           const errorData =
             await response.json();
-
 
           message =
             errorData?.detail ||
             errorData?.message ||
             message;
 
-
         } catch {
-
-          // Response was not JSON
-
+          // Non-JSON response
         }
 
-
-        throw new Error(
-          message
-        );
-
+        throw new Error(message);
       }
-
-
-      // --------------------------------------------------------
-      // Parse result
-      // --------------------------------------------------------
 
       const result =
         await response.json();
-
 
       console.log(
         "AI Insights:",
         result
       );
 
-
-      // --------------------------------------------------------
-      // Store AI result
-      // --------------------------------------------------------
-
       setAiInsights(
         result
       );
-
 
     } catch (error) {
 
@@ -199,19 +342,16 @@ export default function Home() {
         error
       );
 
-
       setAiError(
         error?.message ||
         "Failed to generate AI insights."
       );
-
 
     } finally {
 
       setAiLoading(false);
 
     }
-
   };
 
 
@@ -219,31 +359,51 @@ export default function Home() {
   // FILE SELECTED
   // ============================================================
 
-  const handleFileSelected = (
-    file
-  ) => {
+  const handleFileSelected = (file) => {
 
-    setUploadedFile(
+    console.log(
+      "File selected:",
       file
     );
 
+    setUploadedFile(file);
 
-    // Clear old AI result
-    setAiInsights(
-      null
-    );
+    // Persist the actual File separately. sessionStorage can
+    // preserve the UI state, but it cannot preserve File objects.
+    saveWorkspaceFile(file).catch((error) => {
+      console.error(
+        "Failed to persist uploaded dataset file:",
+        error
+      );
+    });
 
+    // A newly selected file represents a new workspace.
+    // Clear the previous persisted workspace so old EDA/AI
+    // results cannot appear for the new dataset.
+    try {
+      sessionStorage.removeItem(
+        WORKSPACE_STORAGE_KEY
+      );
+    } catch (error) {
+      console.error(
+        "Failed to clear previous workspace state:",
+        error
+      );
+    }
 
-    setAiError(
-      null
-    );
+    // Clear previous AI result
+    setAiInsights(null);
 
+    setAiError(null);
 
-    // Clear old cleaning result
-    setCleaningResult(
-      null
-    );
+    // Clear previous cleaning result
+    setCleaningResult(null);
 
+    // Clear old EDA
+    setEda(null);
+
+    // Reset sidebar
+    setActive("info");
   };
 
 
@@ -251,20 +411,38 @@ export default function Home() {
   // UPLOAD SUCCESS
   // ============================================================
 
-  const handleUploadSuccess = (
-    data
-  ) => {
+  const handleUploadSuccess = (data) => {
 
     console.log(
       "Upload successful:",
       data
     );
 
+    setDataset(data);
 
-    setDataset(
-      data
-    );
+    // New upload means old persisted workspace state
+    // must not be reused.
+    try {
+      sessionStorage.removeItem(
+        WORKSPACE_STORAGE_KEY
+      );
+    } catch (error) {
+      console.error(
+        "Failed to clear previous workspace state:",
+        error
+      );
+    }
 
+    // New upload means old EDA should not remain.
+    setEda(null);
+
+    setAiInsights(null);
+
+    setAiError(null);
+
+    setCleaningResult(null);
+
+    setActive("info");
   };
 
 
@@ -272,20 +450,80 @@ export default function Home() {
   // EDA SUCCESS
   // ============================================================
 
-  const handleEDASuccess = (
-    data
-  ) => {
+  const handleEDASuccess = (data) => {
 
     console.log(
-      "EDA successful:",
+      "========================================"
+    );
+
+    console.log(
+      "EDA RESPONSE RECEIVED:"
+    );
+
+    console.log(
       data
     );
 
-
-    setEda(
-      data
+    console.log(
+      "EDA REPORT:"
     );
 
+    console.log(
+      data?.report
+    );
+
+    console.log(
+      "========================================"
+    );
+
+
+    // ========================================================
+    // IMPORTANT
+    //
+    // Backend response:
+    //
+    // {
+    //   status: "success",
+    //   dataset_id: "...",
+    //   filename: "...",
+    //   report: {
+    //      basic_info: {...},
+    //      column_summary: {...},
+    //      missing_analysis: {...},
+    //      numerical_statistics: {...},
+    //      ...
+    //   }
+    // }
+    //
+    // Frontend components expect:
+    //
+    // eda.column_summary
+    // eda.missing_analysis
+    // eda.numerical_statistics
+    //
+    // Therefore store data.report.
+    // ========================================================
+
+    const report =
+      data?.report || data;
+
+    if (!report) {
+
+      console.error(
+        "EDA response did not contain a report."
+      );
+
+      setEda(null);
+
+      return;
+    }
+
+    setEda(report);
+
+    console.log(
+      "EDA STATE SET TO:",
+      report
+    );
   };
 
 
@@ -293,21 +531,25 @@ export default function Home() {
   // CLEANING SUCCESS
   // ============================================================
 
-  const handleCleaned = (
-    data
-  ) => {
+  const handleCleaned = (data) => {
 
     console.log(
       "Cleaning successful:",
       data
     );
 
-
-    setCleaningResult(
-      data
-    );
-
+    setCleaningResult(data);
   };
+
+
+  // ============================================================
+  // HELPER
+  // ============================================================
+
+  const hasEDA = (
+    eda &&
+    typeof eda === "object"
+  );
 
 
   // ============================================================
@@ -330,7 +572,7 @@ export default function Home() {
 
 
       {/* ======================================================
-          MAIN
+          MAIN CONTENT
       ====================================================== */}
 
       <div className="flex-1 ml-72 p-8">
@@ -401,7 +643,6 @@ export default function Home() {
 
               <div className="flex justify-between items-center border-b pb-5 mb-8">
 
-
                 <div>
 
                   <h1 className="text-4xl font-bold text-blue-600">
@@ -440,7 +681,33 @@ export default function Home() {
 
 
               {/* =================================================
-                 INFO
+                 EDA NOT READY
+              ================================================= */}
+
+              {!hasEDA &&
+                active !== "info" &&
+                active !== "preview" &&
+                active !== "cleaning" &&
+                active !== "ai" && (
+
+                  <div className="bg-yellow-50 border border-yellow-300 rounded-2xl p-8 text-center">
+
+                    <h2 className="text-2xl font-bold text-yellow-700">
+                      EDA data is not available yet
+                    </h2>
+
+                    <p className="text-gray-600 mt-3">
+                      Please wait for EDA analysis to complete
+                      after uploading the dataset.
+                    </p>
+
+                  </div>
+
+                )}
+
+
+              {/* =================================================
+                 DATASET INFORMATION
               ================================================= */}
 
               {active === "info" && (
@@ -453,7 +720,7 @@ export default function Home() {
 
 
               {/* =================================================
-                 PREVIEW
+                 DATASET PREVIEW
               ================================================= */}
 
               {active === "preview" && (
@@ -469,159 +736,160 @@ export default function Home() {
                  COLUMN SUMMARY
               ================================================= */}
 
-              {active === "column" && eda && (
+              {active === "column" &&
+                hasEDA && (
 
-                <ColumnSummary
-                  data={
-                    eda.column_summary
-                  }
-                />
+                  <ColumnSummary
+                    data={
+                      eda.column_summary || {}
+                    }
+                  />
 
-              )}
+                )}
 
 
               {/* =================================================
-                 MISSING
+                 MISSING VALUES
               ================================================= */}
 
-              {active === "missing" && eda && (
+              {active === "missing" &&
+                hasEDA && (
 
-                <MissingValues
-                  data={
-                    eda.missing_analysis
-                  }
+                  <MissingValues
+                    data={
+                      eda.missing_analysis || {}
+                    }
+                  />
 
-                />
-
-              )}
+                )}
 
 
               {/* =================================================
                  DUPLICATES
               ================================================= */}
 
-              {active === "duplicate" && eda && (
+              {active === "duplicate" &&
+                hasEDA && (
 
-                <DuplicateAnalysis
-                  data={
-                    eda.duplicate_analysis
-                  }
+                  <DuplicateAnalysis
+                    data={
+                      eda.duplicate_analysis || {}
+                    }
+                  />
 
-                />
-
-              )}
-
-
-              {/* =================================================
-                 INVALID
-              ================================================= */}
-
-              {active === "invalid" && eda && (
-
-                <InvalidValues
-                  data={
-                    eda.invalid_value_analysis
-                  }
-
-                />
-
-              )}
+                )}
 
 
               {/* =================================================
-                 NUMERICAL
+                 INVALID VALUES
               ================================================= */}
 
-              {active === "numerical" && eda && (
+              {active === "invalid" &&
+                hasEDA && (
 
-                <NumericalStatistics
-                  data={
-                    eda.numerical_statistics
-                  }
+                  <InvalidValues
+                    data={
+                      eda.invalid_value_analysis || {}
+                    }
+                  />
 
-                />
-
-              )}
+                )}
 
 
               {/* =================================================
-                 CATEGORICAL
+                 NUMERICAL STATISTICS
               ================================================= */}
 
-              {active === "categorical" && eda && (
+              {active === "numerical" &&
+                hasEDA && (
 
-                <CategoricalStatistics
-                  data={
-                    eda.categorical_statistics
-                  }
+                  <NumericalStatistics
+                    data={
+                      eda.numerical_statistics || {}
+                    }
+                  />
 
-                />
+                )}
 
-              )}
+
+              {/* =================================================
+                 CATEGORICAL STATISTICS
+              ================================================= */}
+
+              {active === "categorical" &&
+                hasEDA && (
+
+                  <CategoricalStatistics
+                    data={
+                      eda.categorical_statistics || {}
+                    }
+                  />
+
+                )}
 
 
               {/* =================================================
                  CORRELATION
               ================================================= */}
 
-              {active === "correlation" && eda && (
+              {active === "correlation" &&
+                hasEDA && (
 
-                <CorrelationAnalysis
-                  data={
-                    eda.correlation_analysis
-                  }
+                  <CorrelationAnalysis
+                    data={
+                      eda.correlation_analysis || {}
+                    }
+                  />
 
-                />
-
-              )}
+                )}
 
 
               {/* =================================================
                  DISTRIBUTION
               ================================================= */}
 
-              {active === "distribution" && eda && (
+              {active === "distribution" &&
+                hasEDA && (
 
-                <DistributionAnalysis
-                  data={
-                    eda.distribution_analysis
-                  }
+                  <DistributionAnalysis
+                    data={
+                      eda.distribution_analysis || {}
+                    }
+                  />
 
-                />
-
-              )}
+                )}
 
 
               {/* =================================================
                  KURTOSIS
               ================================================= */}
 
-              {active === "kurtosis" && eda && (
+              {active === "kurtosis" &&
+                hasEDA && (
 
-                <KurtosisAnalysis
-                  data={
-                    eda.kurtosis_analysis
-                  }
+                  <KurtosisAnalysis
+                    data={
+                      eda.kurtosis_analysis || {}
+                    }
+                  />
 
-                />
-
-              )}
+                )}
 
 
               {/* =================================================
                  OUTLIER
               ================================================= */}
 
-              {active === "outlier" && eda && (
+              {active === "outlier" &&
+                hasEDA && (
 
-                <OutlierAnalysis
-                  data={
-                    eda.outlier_analysis
-                  }
+                  <OutlierAnalysis
+                    data={
+                      eda.outlier_analysis || {}
+                    }
+                  />
 
-                />
-
-              )}
+                )}
 
 
               {/* =================================================
@@ -660,6 +928,9 @@ export default function Home() {
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
 
+
+                        {/* Original Rows */}
+
                         <div className="bg-white rounded-lg p-4 border">
 
                           <p className="text-sm text-gray-500">
@@ -672,6 +943,8 @@ export default function Home() {
 
                         </div>
 
+
+                        {/* Cleaned Rows */}
 
                         <div className="bg-white rounded-lg p-4 border">
 
@@ -686,6 +959,8 @@ export default function Home() {
                         </div>
 
 
+                        {/* Original Columns */}
+
                         <div className="bg-white rounded-lg p-4 border">
 
                           <p className="text-sm text-gray-500">
@@ -698,6 +973,8 @@ export default function Home() {
 
                         </div>
 
+
+                        {/* Cleaned Columns */}
 
                         <div className="bg-white rounded-lg p-4 border">
 
@@ -729,7 +1006,6 @@ export default function Home() {
               {active === "ai" && (
 
                 <AIInsights
-
                   data={
                     aiInsights
                   }
@@ -745,7 +1021,6 @@ export default function Home() {
                   onGenerate={
                     generateAI
                   }
-
                 />
 
               )}
@@ -761,5 +1036,4 @@ export default function Home() {
     </main>
 
   );
-
 }

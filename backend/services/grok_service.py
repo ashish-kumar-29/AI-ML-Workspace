@@ -38,7 +38,7 @@ client = Groq(
 # MODEL
 # ============================================================
 
-MODEL_NAME = "llama-3.1-8b-instant"
+MODEL_NAME = "openai/gpt-oss-20b"
 
 
 # ============================================================
@@ -47,8 +47,7 @@ MODEL_NAME = "llama-3.1-8b-instant"
 
 def normalize_recommendations(parsed):
     """
-    Convert different possible AI JSON structures into the
-    structure expected by the frontend:
+    Convert different possible AI JSON structures into:
 
     {
         "recommendations": [...]
@@ -57,7 +56,7 @@ def normalize_recommendations(parsed):
 
     # --------------------------------------------------------
     # CASE 1:
-    # Already in the expected format
+    # Already in expected format
     # --------------------------------------------------------
 
     if isinstance(parsed, dict):
@@ -72,10 +71,9 @@ def normalize_recommendations(parsed):
                     "recommendations": recommendations
                 }
 
-
     # --------------------------------------------------------
     # CASE 2:
-    # AI returns a single 'recommendation' key
+    # Single recommendation key
     # --------------------------------------------------------
 
     if isinstance(parsed, dict):
@@ -98,10 +96,9 @@ def normalize_recommendations(parsed):
                     ]
                 }
 
-
     # --------------------------------------------------------
     # CASE 3:
-    # AI returns a top-level list
+    # Top-level list
     # --------------------------------------------------------
 
     if isinstance(parsed, list):
@@ -110,17 +107,9 @@ def normalize_recommendations(parsed):
             "recommendations": parsed
         }
 
-
     # --------------------------------------------------------
     # CASE 4:
-    # Look for another list of recommendation objects
-    #
-    # Example:
-    #
-    # {
-    #     "analysis": [...],
-    #     "suggestions": [...]
-    # }
+    # Find another list of objects
     # --------------------------------------------------------
 
     if isinstance(parsed, dict):
@@ -130,7 +119,6 @@ def normalize_recommendations(parsed):
             if isinstance(value, list):
 
                 if len(value) == 0:
-
                     continue
 
                 if all(
@@ -142,9 +130,8 @@ def normalize_recommendations(parsed):
                         "recommendations": value
                     }
 
-
     # --------------------------------------------------------
-    # Nothing usable found
+    # Nothing usable
     # --------------------------------------------------------
 
     return None
@@ -155,17 +142,23 @@ def normalize_recommendations(parsed):
 # ============================================================
 
 def get_ai_recommendations(prompt: str):
+    """
+    Existing AI Insights functionality.
+
+    This function intentionally remains separate from
+    chatbot generation.
+    """
 
     try:
 
         print(
-            f"[Groq] Sending request using {MODEL_NAME}..."
+            f"[Groq] Sending recommendation request "
+            f"using {MODEL_NAME}..."
         )
 
-
-        # ====================================================
-        # SEND REQUEST TO GROQ
-        # ====================================================
+        # ----------------------------------------------------
+        # Groq request
+        # ----------------------------------------------------
 
         response = client.chat.completions.create(
 
@@ -183,13 +176,11 @@ def get_ai_recommendations(prompt: str):
             response_format={
                 "type": "json_object"
             }
-
         )
 
-
-        # ====================================================
-        # CHECK RESPONSE
-        # ====================================================
+        # ----------------------------------------------------
+        # Validate response
+        # ----------------------------------------------------
 
         if (
             not response
@@ -202,14 +193,15 @@ def get_ai_recommendations(prompt: str):
             )
 
             return {
-                "error": "Groq returned an empty response.",
+                "error": (
+                    "Groq returned an empty response."
+                ),
                 "recommendations": []
             }
 
-
-        # ====================================================
-        # GET RESPONSE TEXT
-        # ====================================================
+        # ----------------------------------------------------
+        # Extract text
+        # ----------------------------------------------------
 
         text = (
             response
@@ -218,7 +210,6 @@ def get_ai_recommendations(prompt: str):
             .content
         )
 
-
         if not text:
 
             print(
@@ -226,48 +217,43 @@ def get_ai_recommendations(prompt: str):
             )
 
             return {
-                "error": "Groq returned an empty response.",
+                "error": (
+                    "Groq returned an empty response."
+                ),
                 "recommendations": []
             }
 
-
         text = text.strip()
 
-
-        # ====================================================
-        # DEBUG RAW RESPONSE
-        # ====================================================
+        # ----------------------------------------------------
+        # Debug
+        # ----------------------------------------------------
 
         print("\n[Groq] RAW RESPONSE:")
         print(text)
         print()
 
-
-        # ====================================================
-        # REMOVE MARKDOWN JSON FENCES
-        # ====================================================
+        # ----------------------------------------------------
+        # Remove markdown JSON fences
+        # ----------------------------------------------------
 
         if text.startswith("```json"):
 
             text = text[7:]
 
-
         elif text.startswith("```"):
 
             text = text[3:]
-
 
         if text.endswith("```"):
 
             text = text[:-3]
 
-
         text = text.strip()
 
-
-        # ====================================================
-        # PARSE JSON
-        # ====================================================
+        # ----------------------------------------------------
+        # Parse JSON
+        # ----------------------------------------------------
 
         try:
 
@@ -282,29 +268,30 @@ def get_ai_recommendations(prompt: str):
             print(error)
 
             return {
-                "error": "Groq returned invalid JSON.",
+                "error": (
+                    "Groq returned invalid JSON."
+                ),
                 "raw_response": text,
                 "recommendations": []
             }
 
-
-        # ====================================================
-        # NORMALIZE RESPONSE
-        # ====================================================
+        # ----------------------------------------------------
+        # Normalize
+        # ----------------------------------------------------
 
         normalized = normalize_recommendations(
             parsed
         )
 
-
-        # ====================================================
-        # VALID RECOMMENDATIONS FOUND
-        # ====================================================
+        # ----------------------------------------------------
+        # Valid recommendations
+        # ----------------------------------------------------
 
         if normalized is not None:
 
             print(
-                "[Groq] Recommendations successfully parsed."
+                "[Groq] Recommendations "
+                "successfully parsed."
             )
 
             print(
@@ -314,25 +301,12 @@ def get_ai_recommendations(prompt: str):
 
             return normalized
 
-
-        # ====================================================
-        # NO RECOMMENDATIONS FOUND
-        # ====================================================
-
-        print(
-            "[Groq] Could not find recommendations "
-            "in the returned JSON."
-        )
+        # ----------------------------------------------------
+        # No recommendations
+        # ----------------------------------------------------
 
         print(
-            "[Groq] Parsed response:"
-        )
-
-        print(
-            json.dumps(
-                parsed,
-                indent=2
-            )
+            "[Groq] Could not find recommendations."
         )
 
         return {
@@ -344,11 +318,6 @@ def get_ai_recommendations(prompt: str):
             "recommendations": []
         }
 
-
-    # ========================================================
-    # GROQ/API ERROR
-    # ========================================================
-
     except Exception as e:
 
         print(
@@ -358,4 +327,279 @@ def get_ai_recommendations(prompt: str):
         return {
             "error": str(e),
             "recommendations": []
+        }
+
+
+# ============================================================
+# AI CHAT RESPONSE
+# ============================================================
+
+def get_ai_chat_response(
+    query: str,
+    rag_results: list[dict],
+    memory_context: str = "",
+):
+    """
+    Generate a natural-language answer using the
+    retrieved dataset context.
+    """
+
+    try:
+
+        # ----------------------------------------------------
+        # Validate query
+        # ----------------------------------------------------
+
+        if not query or not query.strip():
+
+            return {
+                "answer": (
+                    "Please provide a valid question."
+                )
+            }
+
+        # ----------------------------------------------------
+        # Build RAG context
+        # ----------------------------------------------------
+
+        context_parts = []
+
+        for index, result in enumerate(
+            rag_results or [],
+            start=1,
+        ):
+
+            text = result.get(
+                "text",
+                "",
+            )
+
+            metadata = result.get(
+                "metadata",
+                {},
+            )
+
+            distance = result.get(
+                "distance",
+                None,
+            )
+
+            context_parts.append(
+                f"""
+SOURCE {index}
+
+Information:
+{text}
+
+Metadata:
+{json.dumps(metadata)}
+
+Retrieval distance:
+{distance}
+"""
+            )
+
+        if context_parts:
+
+            rag_context = "\n".join(
+                context_parts
+            )
+
+        else:
+
+            rag_context = (
+                "No relevant dataset information "
+                "was retrieved."
+            )
+
+        # ----------------------------------------------------
+        # Conversation context
+        # ----------------------------------------------------
+
+        if memory_context:
+
+            previous_context = (
+                memory_context
+            )
+
+        else:
+
+            previous_context = (
+                "No previous conversation context "
+                "is available."
+            )
+
+        # ====================================================
+        # SYSTEM PROMPT
+        # ====================================================
+
+        system_prompt = """
+You are DataMind AI, an intelligent data-analysis
+assistant.
+
+Your job is to answer questions about the user's
+dataset using the retrieved dataset analysis.
+
+IMPORTANT RULES:
+
+1. Use the retrieved dataset context as the primary
+   source for dataset-specific facts.
+
+2. Never invent statistics, values, columns,
+   relationships, or findings.
+
+3. Explain WHY something is problematic when the
+   user asks why.
+
+4. Give practical data-analysis interpretation.
+
+5. If the retrieved context does not contain enough
+   information to answer confidently, clearly state
+   that the available analysis is insufficient.
+
+6. When recommending an action such as mean,
+   median, or mode imputation, explain why it is
+   appropriate based on the available statistics.
+
+7. Do not mention RAG, embeddings, ChromaDB,
+   vector stores, routing, or internal architecture
+   unless the user explicitly asks about the system.
+
+8. Do not pretend that a correlation or causal
+   relationship exists unless the retrieved context
+   explicitly provides it.
+
+9. Keep answers concise but informative.
+
+10. Return ONLY the natural-language answer.
+"""
+
+        # ====================================================
+        # USER PROMPT
+        # ====================================================
+
+        user_prompt = f"""
+USER QUESTION:
+
+{query}
+
+
+RETRIEVED DATASET INFORMATION:
+
+{rag_context}
+
+
+PREVIOUS CONVERSATION:
+
+{previous_context}
+
+
+Answer the user's question using the retrieved
+dataset information.
+"""
+
+        # ====================================================
+        # GROQ REQUEST
+        # ====================================================
+
+        print(
+            "\n========================================"
+        )
+
+        print(
+            "[Groq Chat] Sending request..."
+        )
+
+        print(
+            f"[Groq Chat] Model: {MODEL_NAME}"
+        )
+
+        print(
+            "========================================"
+        )
+
+        response = client.chat.completions.create(
+
+            model=MODEL_NAME,
+
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": user_prompt,
+                },
+            ],
+
+            temperature=0.2,
+
+            max_tokens=700,
+        )
+
+        # ====================================================
+        # VALIDATE RESPONSE
+        # ====================================================
+
+        if (
+            not response
+            or not response.choices
+            or not response.choices[0].message
+        ):
+
+            print(
+                "[Groq Chat] Empty response."
+            )
+
+            return {
+                "answer": (
+                    "I was unable to generate "
+                    "an answer."
+                )
+            }
+
+        # ====================================================
+        # EXTRACT ANSWER
+        # ====================================================
+
+        answer = (
+            response
+            .choices[0]
+            .message
+            .content
+        )
+
+        if not answer:
+
+            return {
+                "answer": (
+                    "I was unable to generate "
+                    "an answer."
+                )
+            }
+
+        answer = answer.strip()
+
+        print(
+            "[Groq Chat] Response generated successfully."
+        )
+
+        return {
+            "answer": answer
+        }
+
+    except Exception as e:
+        print("\n========================================")
+        print("[Groq Chat] ERROR")
+        print("========================================")
+        print(f"Type: {type(e).__name__}")
+        print(f"Message: {e}")
+        print("========================================\n")
+
+        return {
+            "answer": (
+                "Groq AI response generation failed."
+            ),
+            "error": str(e),
         }

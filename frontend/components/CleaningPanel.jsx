@@ -467,6 +467,13 @@ export default function CleaningPanel({
           );
 
 
+        const aiRecommendation = getAIRecommendation(issue);
+
+        const decisionSource =
+          aiRecommendation?.recommended_method === method
+            ? "AI"
+            : "USER";
+
         const newOperation = {
 
           issueIndex:
@@ -480,6 +487,22 @@ export default function CleaningPanel({
 
           method:
             method,
+
+          // ==================================================
+          // DECISION GRAPH INFORMATION
+          // ==================================================
+
+          decision_source:
+            decisionSource,
+
+          ai_recommendation:
+            aiRecommendation?.recommended_method || null,
+
+          reason:
+            aiRecommendation?.Reason || null,
+
+          alternative:
+            aiRecommendation?.Alternative || null,
         };
 
 
@@ -506,6 +529,83 @@ export default function CleaningPanel({
     );
   };
 
+
+  // ===========================================================
+  // CREATE DECISION GRAPH EXPERIMENT
+  // ===========================================================
+
+  const handleCreateBranch = async (issue, method) => {
+    if (!file) {
+      alert("Please upload a CSV dataset first.");
+      return;
+    }
+
+    if (!issue?.column || !method) {
+      alert("Column or method is missing.");
+      return;
+    }
+
+    try {
+      const graphResponse = await fetch(
+        "http://127.0.0.1:8000/decision-graph"
+      );
+
+      if (!graphResponse.ok) {
+        throw new Error("Failed to get decision graph.");
+      }
+
+      const graph = await graphResponse.json();
+      const parentNodeId = graph?.current_node;
+
+      if (!parentNodeId) {
+        throw new Error(
+          "No current decision-graph node found."
+        );
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("parent_node_id", parentNodeId);
+      formData.append("column", issue.column);
+      formData.append("method", method);
+
+      const response = await fetch(
+        "http://127.0.0.1:8000/decision-graph/experiment",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.detail ||
+          "Failed to create experiment."
+        );
+      }
+
+      console.log(
+        "Experiment created:",
+        data
+      );
+
+      alert(
+        `${issue.column} → ${method} experiment created successfully.`
+      );
+    } catch (error) {
+      console.error(
+        "Experiment creation failed:",
+        error
+      );
+
+      alert(
+        error?.message ||
+        "Failed to create experiment."
+      );
+    }
+  };
 
   // ============================================================
   // REMOVE OPERATION
@@ -1124,20 +1224,36 @@ export default function CleaningPanel({
 
                     {aiRecommendation.Alternative && (
 
-                      <p className="mt-2 text-gray-600">
+                      <div className="mt-3">
 
-                        <span className="font-semibold">
-                          Alternative:
-                        </span>
+                        <p className="text-gray-600">
 
-                        {" "}
+                          <span className="font-semibold">
+                            Alternative:
+                          </span>
 
-                        {
-                          aiRecommendation
-                            .Alternative
-                        }
+                          {" "}
 
-                      </p>
+                          {
+                            aiRecommendation
+                              .Alternative
+                          }
+
+                        </p>
+
+                        <button
+                          onClick={() =>
+                            handleCreateBranch(
+                              issue,
+                              aiRecommendation.Alternative
+                            )
+                          }
+                          className="mt-3 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+                        >
+                          🔀 Try Alternative
+                        </button>
+
+                      </div>
                     )}
 
 
